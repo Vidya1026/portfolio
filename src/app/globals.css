@@ -153,3 +153,310 @@
     radial-gradient(60% 40% at 80% 20%, rgba(34,211,238,0.12), transparent 60%),
     radial-gradient(60% 40% at 50% 80%, rgba(236,72,153,0.10), transparent 60%);
 }
+
+/* ==== In-page anchor behavior (navbar-aware) ==== */
+html { scroll-behavior: smooth; }
+
+/* Add this class to sections that are anchor targets so they don't hide under the sticky nav */
+.section-anchor { scroll-margin-top: 80px; }
+/* --- Chat widget extras --- */
+@keyframes wave {
+  0% { transform: rotate(0deg); }
+  15% { transform: rotate(16deg); }
+  30% { transform: rotate(-10deg); }
+  45% { transform: rotate(12deg); }
+  60% { transform: rotate(-6deg); }
+  75% { transform: rotate(8deg); }
+  100% { transform: rotate(0deg); }
+}
+.hand-wave {
+  animation: wave 1.6s ease-in-out infinite;
+  transform-origin: 70% 70%;
+}
+
+@keyframes pop {
+  0% { transform: translateY(6px) scale(0.9); opacity: 0; }
+  60% { transform: translateY(0px) scale(1.02); opacity: 1; }
+  100% { transform: translateY(0px) scale(1); }
+}
+.wave-pop {
+  animation: pop 400ms ease-out both;
+}
+
+/* a light fade/zoom utility used by the panel */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-in.fade-in.zoom-in-95 {
+  animation: fadeIn 160ms ease-out;
+}
+
+/* Peek/climb greeting for the closed chat button */
+@keyframes peek {
+  0%   { transform: translate(-6px, 10px); opacity: 0; }
+  35%  { transform: translate(-2px, 0);    opacity: 1; }
+  55%  { transform: translate(-2px, 0);    opacity: 1; }
+  100% { transform: translate(-6px, 10px); opacity: 0; }
+}
+.bot-peek { animation: peek 2.2s ease-in-out 0.6s both; }
+/* --- Chat bot greet animations --- */
+@keyframes bot-climb-key {
+  0%   { transform: translate(22px, 26px) scale(.7) rotate(14deg); opacity: 0; }
+  30%  { opacity: 1; }
+  60%  { transform: translate(-10px, -34px) scale(1) rotate(0deg); }
+  78%  { transform: translate(-12px, -40px) rotate(-4deg); }
+  100% { transform: translate(-10px, -34px) rotate(0deg); }
+}
+@keyframes bot-bob-key { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px);} }
+@keyframes bot-arm-wave-key {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(24deg); }
+  50% { transform: rotate(-14deg); }
+  75% { transform: rotate(18deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes bot-bubble-pop-key { 0% { transform: scale(.78) translate(-6px, 10px); opacity: 0;} 70% { opacity: 1; } 100% { transform: scale(1) translate(-12px, -10px);} }
+@keyframes bot-bubble-fade-key { to { opacity: 0; transform: scale(.98) translate(-12px, -10px);} }
+
+.bot-climb { position: absolute; bottom: 0; right: 0; animation: bot-climb-key 1.8s cubic-bezier(.23,1,.32,1) .2s both; }
+.bot-body  { filter: drop-shadow(0 3px 10px rgba(0,0,0,.28)); animation: bot-bob-key 1.8s ease-in-out 1.8s 3; }
+.bot-arm   { animation: bot-arm-wave-key 1.6s ease-in-out 1s 2; transform-origin: 12px 28px; }
+.bot-say   { position: absolute; bottom: 56px; right: 52px; font-size: 11px; line-height: 1; color: #111; background: #fff; border-radius: 9999px; padding: 6px 9px; box-shadow: 0 6px 14px rgba(0,0,0,.28); animation: bot-bubble-pop-key 320ms ease-out .9s both, bot-bubble-fade-key 420ms ease-in 2.8s forwards; }
+
+/* --- FAB attention animations --- */
+.chat-fab-attn { 
+  animation: wiggle 900ms ease-in-out 0s 3, floaty 6s ease-in-out 0s infinite; 
+}
+.fab-ping {
+  pointer-events: none;
+  position: absolute;
+  width: 100%; height: 100%;
+  border-radius: 9999px;
+  background: radial-gradient(closest-side, rgba(139,92,246,.35), transparent 70%);
+  animation: ping 1.8s ease-out infinite;
+}
+
+@keyframes wiggle {
+  0% { transform: translate(0,0) rotate(0); }
+  15% { transform: translate(-1px,0) rotate(-6deg); }
+  35% { transform: translate(1px,0) rotate(6deg); }
+  55% { transform: translate(-1px,0) rotate(-4deg); }
+  75% { transform: translate(1px,0) rotate(4deg); }
+  100% { transform: translate(0,0) rotate(0); }
+}
+@keyframes floaty {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-2px); }
+}
+@keyframes ping {
+  0%   { transform: scale(1); opacity: .65; }
+  70%  { transform: scale(1.6); opacity: 0; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* --- Rope + climbing bot greeting --- */
+.bot-rope {
+  position: absolute;
+  right: 62px; bottom: 52px;
+  width: 2px; height: 120px;
+  background: linear-gradient(#d1d5db,#9ca3af);
+  transform-origin: top center;
+  opacity: 0; transform: translateY(10px) scaleY(0);
+  animation: rope-drop 350ms ease-out 300ms forwards;
+}
+.bot-climb {
+  position: absolute;
+  right: 62px; bottom: 52px;
+  opacity: 0; transform: translateY(40px);
+  animation: bot-climb-in 600ms cubic-bezier(.22,1,.36,1) 600ms forwards,
+             bot-bob 2800ms ease-in-out 1200ms 1;
+}
+.bot-body {
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,.35));
+  transform-origin: 50% 50%;
+}
+.bot-arm {
+  transform: rotate(0deg);
+  animation: bot-wave 900ms ease-in-out 1100ms 2;
+}
+.bot-say {
+  position: absolute;
+  right: 62px; bottom: 106px;
+  background: white; color: #18181b;
+  font-weight: 600; font-size: 12px;
+  padding: 6px 10px; border-radius: 999px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.35);
+  transform: translate(4px, 0) scale(.85); opacity: 0;
+  animation: say-pop 360ms cubic-bezier(.22,1,.36,1) 1600ms forwards,
+             say-float 2400ms ease-in-out 1960ms forwards;
+}
+
+@keyframes rope-drop {
+  to { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+@keyframes bot-climb-in {
+  0%   { opacity: 0; transform: translateY(40px); }
+  60%  { opacity: 1; transform: translateY(-6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes bot-bob {
+  0%,100% { transform: translateY(0); }
+  50%     { transform: translateY(-4px); }
+}
+@keyframes bot-wave {
+  0%   { transform: rotate(0deg); }
+  25%  { transform: rotate(-22deg); }
+  50%  { transform: rotate(10deg); }
+  75%  { transform: rotate(-16deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes say-pop {
+  0%   { opacity: 0; transform: translate(4px, 4px) scale(.85); }
+  100% { opacity: 1; transform: translate(0, 0) scale(1); }
+}
+@keyframes say-float {
+  0%   { transform: translate(0,0) scale(1); }
+  50%  { transform: translate(0,-4px) scale(1); }
+  100% { transform: translate(0,-2px) scale(1); }
+}
+
+
+
+/* ===== Chat Widget Animations & Effects ===== */
+
+/* soft neon drop around the open panel */
+.chat-neon {
+  box-shadow:
+    0 0 60px rgba(139, 92, 246, 0.25),
+    0 0 120px rgba(56, 189, 248, 0.12);
+}
+
+/* FAB attention wiggle & ping */
+@keyframes fab-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  10% { transform: rotate(-6deg); }
+  20% { transform: rotate(6deg); }
+  30% { transform: rotate(-4deg); }
+  40% { transform: rotate(4deg); }
+  50% { transform: rotate(-2deg); }
+  60% { transform: rotate(2deg); }
+  70%, 100% { transform: rotate(0deg); }
+}
+.chat-fab-attn {
+  animation: fab-wiggle 1.2s ease-in-out 0.3s 2 both;
+}
+.fab-ping {
+  animation: fab-pulse 2.4s ease-out infinite;
+  background: radial-gradient(closest-side, rgba(139,92,246,0.45), transparent 70%);
+  filter: blur(6px);
+}
+@keyframes fab-pulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  70% { transform: scale(1.35); opacity: 0; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+
+/* Greeting: rope + climb + speech bubble */
+.bot-rope {
+  position: absolute;
+  left: 50%;
+  top: -140px;
+  width: 2px;
+  height: 140px;
+  transform: translateX(-50%);
+  background: linear-gradient(to bottom, rgba(255,255,255,0.7), rgba(255,255,255,0.1));
+  border-radius: 1px;
+  animation: rope-drop 0.6s ease-out forwards;
+}
+@keyframes rope-drop {
+  0% { height: 0; opacity: 0; }
+  100% { height: 140px; opacity: 1; }
+}
+.bot-climb {
+  position: absolute;
+  left: 50%;
+  top: -110px;
+  transform: translate(-50%, 0);
+  animation:
+    bot-swing 1.6s ease-in-out 0.2s 2,
+    bot-climb-in 1.4s cubic-bezier(.22,1,.36,1) 0.3s forwards;
+}
+@keyframes bot-climb-in {
+  0% { transform: translate(-50%, -22px) rotate(-8deg); opacity: 0; }
+  60% { transform: translate(-50%, 8px) rotate(6deg); opacity: 1; }
+  100% { transform: translate(-50%, 0) rotate(0deg); opacity: 1; }
+}
+@keyframes bot-swing {
+  0% { transform: translate(-50%, 0) rotate(-6deg); }
+  50% { transform: translate(-50%, 6px) rotate(6deg); }
+  100% { transform: translate(-50%, 0) rotate(-6deg); }
+}
+.bot-body {
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.25));
+}
+.bot-arm {
+  animation: bot-wave 1.4s ease-in-out 0.6s 2 both;
+}
+@keyframes bot-wave {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(-28deg); }
+  50% { transform: rotate(10deg); }
+  75% { transform: rotate(-22deg); }
+  100% { transform: rotate(0deg); }
+}
+.bot-say {
+  position: absolute;
+  right: 64px;
+  bottom: 68px;
+  background: rgba(255,255,255,0.95);
+  color: #111;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1;
+  transform: translateY(6px);
+  opacity: 0;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.28);
+  animation: say-pop 480ms cubic-bezier(.2,.9,.2,1.2) 1s forwards;
+}
+@keyframes say-pop {
+  0%   { transform: translateY(6px) scale(.85); opacity: 0; }
+  60%  { transform: translateY(-2px) scale(1.06); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* nicer grab cursor for the header drag */
+.chat-drag { cursor: grab; }
+.chat-drag:active { cursor: grabbing; }
+
+/* Input ring/focus polish + make sure it never clips */
+.chat-input {
+  border-radius: 12px;
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,0.14);
+}
+.chat-input:focus {
+  outline: none;
+  border-color: rgba(139,92,246,0.65);
+  box-shadow: 0 0 0 3px rgba(139,92,246,0.25);
+}
+
+/* guard against GPU clipping near the resize handle */
+.chat-input-wrap {
+  padding-bottom: 6px;
+  box-sizing: border-box;
+}
+
+/* Hide scrollbars for header actions row when it overflows */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Subtle wiggle for the header robot */
+@keyframes wiggle-slow {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(6deg); }
+  50% { transform: rotate(-6deg); }
+  80% { transform: rotate(4deg); }
+}
+.animate-wiggle-slow { animation: wiggle-slow 900ms ease-in-out 1; }
