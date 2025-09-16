@@ -37,7 +37,9 @@ const ChatWidget: React.FC = () => {
 
   // size + resizing
   const [size, setSize] = useState({ w: 360, h: 480 });
+  const compact = size.w < 420;
   const resizingRef = useRef(false);
+  const resizeSideRef = useRef<'right' | 'left'>("right");
   const startPosRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
 
   // dragging (panel)
@@ -92,7 +94,9 @@ const ChatWidget: React.FC = () => {
       if (resizingRef.current && startPosRef.current) {
         const dx = e.clientX - startPosRef.current.x;
         const dy = e.clientY - startPosRef.current.y;
-        const newW = clamp(startPosRef.current.w + dx, MIN_W, MAX_W);
+        // For a left-side handle, horizontal delta inverts
+        const effDx = resizeSideRef.current === 'left' ? -dx : dx;
+        const newW = clamp(startPosRef.current.w + effDx, MIN_W, MAX_W);
         const newH = clamp(startPosRef.current.h + dy, MIN_H, MAX_H);
         setSize({ w: newW, h: newH });
       }
@@ -123,8 +127,9 @@ const ChatWidget: React.FC = () => {
     };
   }, []);
 
-  const startResize = (e: React.MouseEvent) => {
+  const startResize = (e: React.MouseEvent, side: 'right' | 'left' = 'right') => {
     resizingRef.current = true;
+    resizeSideRef.current = side;
     startPosRef.current = { x: e.clientX, y: e.clientY, w: size.w, h: size.h };
     document.body.style.userSelect = "none";
   };
@@ -177,7 +182,7 @@ const ChatWidget: React.FC = () => {
           aria-label="Open chat"
           title="Open Gemini 2.0 Assistant"
           type="button"
-          className={`relative w-14 h-14 rounded-full bg-violet-600 text-white shadow-[0_0_22px_rgba(139,92,246,0.85)] flex items-center justify-center hover:shadow-[0_0_28px_rgba(139,92,246,1)] transition-shadow overflow-visible ${attn ? "chat-fab-attn" : ""}`}
+          className={`relative w-14 h-14 rounded-full bg-violet-600 text-white shadow-[0_0_22px_rgba(139,92,246,0.85)] flex items-center justify-center hover:shadow-[0_0_28px_rgba(139,92,246,1)] transition-shadow overflow-visible hover:animate-wiggle ${attn ? "chat-fab-attn" : ""}`}
         >
           {/* Robot head */}
           <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden>
@@ -218,56 +223,64 @@ const ChatWidget: React.FC = () => {
       {isOpen && (
         <div
           data-version="v3"
-          className="flex flex-col rounded-2xl chat-neon overflow-hidden bg-background/70 backdrop-blur-xl border border-white/10 animate-in fade-in zoom-in-95"
-          style={{ width: size.w, height: isMinimized ? 56 : size.h, minWidth: 320, minHeight: 340, boxSizing: 'border-box', paddingBottom: 0, overflow: 'hidden' }}
+          className={`flex flex-col rounded-2xl chat-neon overflow-hidden bg-background/70 backdrop-blur-xl border border-white/10 animate-in fade-in zoom-in-95 ${loading ? "chat-neon-pulse" : ""}`}
+          style={{ width: size.w, height: isMinimized ? 56 : size.h, minWidth: 320, minHeight: 360, boxSizing: 'border-box', paddingBottom: 0, overflow: 'hidden' }}
           role="dialog"
           aria-label="Gemini 2.0 chat"
         >
           {/* Top bar (drag handle) */}
           <div
-            className="sticky top-0 z-50 shrink-0 px-4 py-3 bg-gradient-to-r from-violet-600/70 to-cyan-600/70 text-white text-sm font-semibold flex justify-between items-center gap-2 chat-drag select-none border-b border-white/10"
+            className="sticky top-0 z-[120] shrink-0 px-4 py-3 min-h-[56px] bg-gradient-to-r from-violet-600/70 to-cyan-600/70 text-white text-sm font-semibold flex justify-between items-center gap-4 chat-drag select-none border-b border-white/10 shadow-[0_2px_12px_rgba(0,0,0,0.35)] backdrop-blur-xl overflow-visible"
             onMouseDown={startDragPanel}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
               <span className="inline-block hand-wave animate-wiggle-slow">🤖</span>
-              <span>Gemini 2.0 Assistant</span>
-              <span className="ml-2 text-[10px] opacity-80">v3</span>
-              {loading && (
-                <span className="ml-2 text-[10px] bg-white/20 px-2 py-[2px] rounded-full">thinking…</span>
-              )}
+              <span className={`truncate ${compact ? "text-[13px]" : ""}`}>Gemini 2.0 Assistant</span>
             </div>
             <div
-              className="flex items-center gap-2 cursor-default flex-nowrap justify-end max-w-[70%] whitespace-nowrap overflow-x-auto no-scrollbar pointer-events-auto"
+              className={`flex items-center ${compact ? "gap-2" : "gap-4"} cursor-default flex-none whitespace-nowrap pointer-events-auto z-[90] flex-wrap`}
               onMouseDown={(e) => e.stopPropagation()}
             >
-              {/* Size presets */}
+              <span className="text-[10px] opacity-80">v3</span>
+              {loading && (
+                <span className="text-[10px] bg-white/20 px-2 py-[2px] rounded-full">thinking…</span>
+              )}
               <button
                 type="button"
-                className="text-white/85 hover:text-white text-[11px] px-2 py-1 rounded-md hover:bg-white/10 whitespace-nowrap"
+                tabIndex={0}
+                title="Reset size"
+                className={`text-white/85 hover:text-white ${compact ? "text-[12px] px-1.5 py-0.5" : "text-[11px] px-2 py-1"} rounded-md hover:bg-white/10`}
+                onMouseDown={(e) => e.stopPropagation()}
                 onClick={(e) => { e.stopPropagation(); setSize({ w: 380, h: 500 }); }}
                 aria-label="Reset size"
               >
-                Reset
+                {compact ? "↺" : "Reset"}
               </button>
               <button
                 type="button"
-                className="text-white/85 hover:text-white text-[11px] px-2 py-1 rounded-md hover:bg-white/10 whitespace-nowrap"
+                tabIndex={0}
+                title="Large size"
+                className={`text-white/85 hover:text-white ${compact ? "text-[12px] px-1.5 py-0.5" : "text-[11px] px-2 py-1"} rounded-md hover:bg-white/10`}
+                onMouseDown={(e) => e.stopPropagation()}
                 onClick={(e) => { e.stopPropagation(); setSize({ w: 500, h: 640 }); }}
                 aria-label="Large size"
               >
-                Large
+                {compact ? "⬛" : "Large"}
               </button>
               <button
                 type="button"
-                className="text-white/85 hover:text-white text-[11px] px-2 py-1 rounded-md hover:bg-white/10 whitespace-nowrap"
+                tabIndex={0}
+                title="Clear conversation"
+                className={`text-white/85 hover:text-white ${compact ? "text-[12px] px-1.5 py-0.5" : "text-[11px] px-2 py-1"} rounded-md hover:bg-white/10`}
+                onMouseDown={(e) => e.stopPropagation()}
                 onClick={(e) => { e.stopPropagation(); try { localStorage.removeItem(STORAGE_KEY); } catch {} try { sessionStorage.removeItem("bot.greeted"); } catch {} setMessages([]); }}
                 aria-label="Clear chat"
               >
-                Clear
+                {compact ? "✖" : "Clear"}
               </button>
               <button
                 type="button"
-                className="text-white/85 hover:text-white text-lg leading-none"
+                className={`text-white/85 hover:text-white ${compact ? "text-base" : "text-lg"} leading-none w-6 text-center`}
                 onClick={(e) => { e.stopPropagation(); setIsMinimized((v) => !v); }}
                 aria-label="Minimize"
                 title="Minimize"
@@ -276,9 +289,10 @@ const ChatWidget: React.FC = () => {
               </button>
               <button
                 type="button"
-                className="text-white/85 hover:text-white text-lg leading-none"
+                className={`text-white/85 hover:text-white ${compact ? "text-base" : "text-lg"} leading-none w-6 text-center`}
                 onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}
                 aria-label="Close chat"
+                title="Close"
               >
                 ✕
               </button>
@@ -287,12 +301,14 @@ const ChatWidget: React.FC = () => {
 
           {/* Thinking shimmer bar */}
           {loading && !isMinimized && (
-            <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-white/70 to-transparent animate-pulse" />
+            <div className="h-[2px] w-full overflow-hidden">
+              <div className="h-full w-[160%] -ml-[30%] bg-gradient-to-r from-transparent via-white/80 to-transparent animate-[shimmer_1.2s_linear_infinite]" />
+            </div>
           )}
 
           {/* Messages */}
           {!isMinimized && (
-            <div className="flex-1 overflow-y-auto min-h-0 space-y-2 pt-2 pb-20 px-3 z-0">
+            <div className="flex-1 overflow-y-auto min-h-0 space-y-2 pt-2 pb-28 px-3 z-[10]">
               <div className="max-w-[80%] px-3 py-2 rounded-2xl text-sm bg-violet-500/20 text-white rounded-bl-md shadow-[0_0_6px_rgba(139,92,246,0.6)]">
                 👋 I’m Bhargava’s Portfolio Assistant. Ask about projects, experience, or certifications.
               </div>
@@ -319,6 +335,12 @@ const ChatWidget: React.FC = () => {
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-white/60 animate-bounce [animation-delay:240ms]"></span>
                 </div>
               )}
+              {/* Lightweight skeleton bubble for perceived responsiveness */}
+              {loading && (
+                <div className="max-w-[60%] h-8 rounded-xl bg-white/10 overflow-hidden relative">
+                  <div className="absolute inset-0 -translate-x-1/2 w-full bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[shimmer_1.4s_linear_infinite]" />
+                </div>
+              )}
 
               <div ref={endRef} />
             </div>
@@ -326,8 +348,8 @@ const ChatWidget: React.FC = () => {
 
           {/* Input */}
           {!isMinimized && (
-            <div className="p-4 pt-3 pb-7 pr-7 border-t border-white/10 bg-background/60 relative chat-input-wrap z-10">
-              <div className="relative">
+            <div className="p-4 pt-3 pb-6 pr-4 border-t border-white/10 bg-background/60 chat-input-wrap z-[50]">
+              <div className="flex items-end gap-3">
                 <textarea
                   rows={1}
                   value={input}
@@ -335,31 +357,29 @@ const ChatWidget: React.FC = () => {
                   onKeyDown={onKey}
                   placeholder="Type a message…"
                   disabled={loading}
-                  className="w-full resize-none chat-input rounded-xl bg-white/10 text-white placeholder-white/60 px-3 py-3 pr-36 leading-6 min-h-[48px] max-h-40"
+                  className="flex-1 resize-none chat-input rounded-xl bg-white/10 text-white placeholder-white/60 px-4 py-[14px] leading-6 h-12 min-h-[48px] max-h-40"
                   style={{ scrollbarWidth: 'thin' }}
                   aria-label="Type a message"
                 />
                 <button
                   onClick={send}
                   disabled={loading || !input.trim()}
-                  className="absolute right-4 bottom-4 px-5 h-11 rounded-xl bg-violet-600 text-white disabled:opacity-50 hover:shadow-[0_0_20px_rgba(139,92,246,0.8)] transition-shadow"
+                  className="h-11 px-5 rounded-xl bg-violet-600 text-white disabled:opacity-50 hover:shadow-[0_0_20px_rgba(139,92,246,0.8)] transition-shadow"
                   type="button"
                   aria-label="Send message"
                 >
                   Send
                 </button>
               </div>
-              <div className="mt-1 text-[10px] text-white/60 text-center">Powered by Gemini 2.0</div>
-              {/* spacer so the resize handle never overlaps the input */}
-              <div className="h-3" />
+              <div className="mt-2 text-[10px] text-white/60 text-center">Powered by Gemini 2.0</div>
             </div>
           )}
 
-          {/* Resize handle (bottom-right of the panel) */}
+          {/* Resize handle (bottom-left of chat) */}
           {!isMinimized && (
             <div
-              className="absolute bottom-3 left-3 w-3.5 h-3.5 cursor-nesw-resize rounded bg-white/25 hover:bg-white/35 z-30"
-              onMouseDown={startResize}
+              className="absolute bottom-3 left-3 w-3.5 h-3.5 cursor-nesw-resize rounded bg-white/30 hover:bg-white/60 z-[90]"
+              onMouseDown={(e) => startResize(e, 'left')}
               title="Drag to resize"
               aria-hidden
             />
