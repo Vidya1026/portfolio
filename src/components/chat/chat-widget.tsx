@@ -223,7 +223,7 @@ const ChatWidget: React.FC = () => {
       {isOpen && (
         <div
           data-version="v3"
-          className={`flex flex-col rounded-2xl chat-neon overflow-hidden bg-background/70 backdrop-blur-xl border border-white/10 animate-in fade-in zoom-in-95 ${loading ? "chat-neon-pulse" : ""}`}
+          className={`flex flex-col rounded-2xl chat-neon overflow-hidden bg-transparent backdrop-blur-xl border border-white/15 animate-in fade-in zoom-in-95 ${loading ? "chat-neon-pulse" : ""}`}
           style={{ width: size.w, height: isMinimized ? 56 : size.h, minWidth: 320, minHeight: 360, boxSizing: 'border-box', paddingBottom: 0, overflow: 'hidden' }}
           role="dialog"
           aria-label="Gemini 2.0 chat"
@@ -348,7 +348,7 @@ const ChatWidget: React.FC = () => {
 
           {/* Input */}
           {!isMinimized && (
-            <div className="p-4 pt-3 pb-6 pr-4 border-t border-white/10 bg-background/60 chat-input-wrap z-[50]">
+            <div className="p-4 pt-3 pb-6 pr-4 border-t border-white/10 bg-black/25 backdrop-blur-xl chat-input-wrap z-[50]">
               <div className="flex items-end gap-3">
                 <textarea
                   rows={1}
@@ -361,15 +361,41 @@ const ChatWidget: React.FC = () => {
                   style={{ scrollbarWidth: 'thin' }}
                   aria-label="Type a message"
                 />
-                <button
-                  onClick={send}
-                  disabled={loading || !input.trim()}
-                  className="h-11 px-5 rounded-xl bg-violet-600 text-white disabled:opacity-50 hover:shadow-[0_0_20px_rgba(139,92,246,0.8)] transition-shadow"
-                  type="button"
-                  aria-label="Send message"
-                >
-                  Send
-                </button>
+                <div className="relative group">
+                  {/* soft outer glow on hover */}
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute -inset-[3px] rounded-2xl bg-gradient-to-r from-violet-500/50 via-violet-400/40 to-violet-300/50 blur-md opacity-0 group-hover:opacity-90 transition-opacity duration-300"
+                  />
+                  <button
+                    onClick={send}
+                    disabled={loading || !input.trim() }
+                    type="button"
+                    aria-label="Send message"
+                    className="relative h-11 px-7 rounded-2xl text-white font-medium
+                                 bg-gradient-to-r from-violet-700 via-violet-600 to-violet-500
+                                 border border-white/20 backdrop-blur-md
+                                 shadow-[0_8px_24px_rgba(124,58,237,0.35)]
+                                 hover:shadow-[0_10px_28px_rgba(139,92,246,0.55)]
+                                 transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:saturate-[.6]
+                                 overflow-hidden"
+                  >
+                    {/* glossy top highlight */}
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent"
+                    />
+                    {/* animated sheen on hover */}
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute -left-1/2 top-0 h-full w-1/2
+                                 bg-gradient-to-r from-transparent via-white/60 to-transparent
+                                 skew-x-[-20deg] opacity-0 group-hover:opacity-100
+                                 animate-[shimmer_1.6s_ease-in-out_infinite]"
+                    />
+                    <span className="relative z-10">Send</span>
+                  </button>
+                </div>
               </div>
               <div className="mt-2 text-[10px] text-white/60 text-center">Powered by Gemini 2.0</div>
             </div>
