@@ -6,7 +6,7 @@ export function Aurora({ className }: { className?: string }) {
     <div
       aria-hidden
       className={cn(
-        "pointer-events-none absolute inset-0 -z-10 aurora-bg",
+        "pointer-events-none absolute inset-0 -z-20 aurora-bg",
         "animate-aurora blur-2xl"
       )}
     />

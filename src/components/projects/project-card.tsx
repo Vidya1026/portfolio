@@ -26,7 +26,7 @@ export function ProjectCard({ p, className }: { p: Project; className?: string }
   return (
     <SpotlightCard
       className={cn(
-        "project-card group relative overflow-hidden",                // enable group-hover & clip local shine
+        "project-card group relative z-10 isolate overflow-hidden",                // enable group-hover & clip local shine
         "glass rounded-2xl ring-1 ring-white/10 bg-white/[0.05] backdrop-blur-md",
         "min-h-[460px] md:min-h-[520px] p-6 md:p-7 flex flex-col justify-start",
         "shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_14px_44px_rgba(0,0,0,0.45)]",

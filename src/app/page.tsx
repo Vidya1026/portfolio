@@ -6,11 +6,160 @@ import ProjectsSection from "@/components/projects/projects-section";
 import ExperienceSection from "@/components/experience/experience-section";
 import CertificationsSection from "@/components/certifications/certifications-section";
 import Image from "next/image";
+
 import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
+
+// --- Animated metrics (Years / Projects / Certifications) ---
+function useCount(target: number, active: boolean, duration = 1200) {
+  const [n, setN] = useState(0);
+  const startRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!active) return;
+    let raf: number;
+    const step = (t: number) => {
+      if (startRef.current == null) startRef.current = t;
+      const p = Math.min(1, (t - startRef.current) / duration);
+      // easeOutCubic
+      const eased = 1 - Math.pow(1 - p, 3);
+      setN(Math.round(target * eased));
+      if (p < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [target, active, duration]);
+  return n;
+}
+
+function MetricCard({ icon, target, label, suffix = "", delay = 0, className = "", accent = "violet" as "violet" | "emerald" | "sky" }: { icon: ReactNode; target: number; label: string; suffix?: string; delay?: number; className?: string; accent?: "violet" | "emerald" | "sky" }) {
+  const [active, setActive] = useState(false);
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const value = useCount(target, active);
+  const accentBg = {
+    violet: "from-violet-500/60 to-fuchsia-500/60",
+    emerald: "from-emerald-500/60 to-teal-500/60",
+    sky: "from-sky-500/60 to-cyan-500/60",
+  }[accent];
+  const orbBg = {
+    violet: "bg-violet-500/20",
+    emerald: "bg-emerald-500/20",
+    sky: "bg-sky-500/20",
+  }[accent];
+  const numberGrad = {
+    violet: "from-violet-200 to-fuchsia-200",
+    emerald: "from-emerald-200 to-teal-200",
+    sky: "from-sky-200 to-cyan-200",
+  }[accent];
+  useEffect(() => {
+    const el = hostRef.current!;
+    const io = new IntersectionObserver((e) => {
+      if (e[0].isIntersecting) setActive(true);
+    }, { threshold: 0.5 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return (
+    <div
+      ref={hostRef}
+      className={`group relative overflow-hidden rounded-full bg-white/[0.06] ring-1 ring-white/10 px-4 py-2 md:px-5 md:py-2.5 backdrop-blur transition hover:-translate-y-0.5 hover:ring-white/20 hover:shadow-[0_10px_30px_rgba(0,0,0,0.35)] will-change-transform ${active ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"} ${className}`}
+      style={{ transitionDuration: "600ms", transitionTimingFunction: "cubic-bezier(.2,.8,.2,1)", transitionDelay: `${delay}ms` }}
+    >
+      {/* glow orb */}
+      <span aria-hidden className={`absolute -z-10 -left-6 -top-8 size-24 rounded-full ${orbBg} blur-2xl`} />
+      {/* sheen */}
+      <span className="pointer-events-none absolute inset-0 -translate-x-1/2 bg-gradient-to-r from-transparent via-white/25 to-transparent opacity-0 group-hover:opacity-100 transition duration-700 group-hover:translate-x-[120%]" />
+      <div className="flex items-center gap-2 md:gap-3 whitespace-nowrap">
+        <span className={`inline-grid place-items-center size-7 md:size-8 rounded-md ring-1 ring-white/10 text-white/95 shadow-[0_0_24px_rgba(0,0,0,0.25)] bg-gradient-to-br ${accentBg}`}>
+          {icon}
+        </span>
+        <span className={`text-lg md:text-xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r ${numberGrad}`}>
+          {value}
+          <span className="ml-0.5 text-base md:text-lg font-semibold text-white/80">{suffix}</span>
+        </span>
+        <span className="text-xs md:text-sm text-white/75">{label}</span>
+      </div>
+      {/* tiny sparkles */}
+      <span aria-hidden className="absolute -right-2 top-1 size-2 rounded-full bg-white/70 blur-[1px] opacity-70 animate-ping" />
+      <span aria-hidden className="absolute right-6 -bottom-2 size-1.5 rounded-full bg-white/60 opacity-60 animate-pulse" />
+    </div>
+  );
+}
+
+const SvgBriefcase = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-[14px] md:size-[16px]">
+    <path d="M9 7V6a3 3 0 0 1 3-3h0a3 3 0 0 1 3 3v1"/>
+    <path d="M3 7h18v10a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7z"/>
+    <path d="M3 12h18"/>
+  </svg>
+);
+
+const SvgApps = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-[14px] md:size-[16px]">
+    <rect x="4" y="4" width="7" height="7" rx="1.5"/>
+    <rect x="13" y="4" width="7" height="7" rx="1.5"/>
+    <rect x="4" y="13" width="7" height="7" rx="1.5"/>
+    <rect x="13" y="13" width="7" height="7" rx="1.5"/>
+  </svg>
+);
+
+const SvgCertificate = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-[14px] md:size-[16px]">
+    <circle cx="12" cy="9" r="4"/>
+    <path d="M8.5 13.5 7 22l5-3 5 3-1.5-8.5"/>
+  </svg>
+);
+
+function MetricsBar() {
+  return (
+    <div className="mt-4 relative">
+      {/* vertical connector aligned to all rows */}
+      <div aria-hidden className="pointer-events-none absolute left-3 md:left-4 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-white/15 to-transparent" />
+
+      <div className="relative flex flex-col gap-5">
+        {/* Row 1 */}
+        <div className="flex items-center">
+          <span aria-hidden className="ml-2 mr-3 size-2 rounded-full bg-violet-400/90 shadow-[0_0_12px_rgba(139,92,246,.6)]" />
+          <MetricCard icon={SvgBriefcase} target={3} label="Years" delay={0} accent="violet" className="ml-0 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]" />
+        </div>
+        {/* Row 2 */}
+        <div className="flex items-center">
+          <span aria-hidden className="ml-2 mr-3 size-2 rounded-full bg-emerald-400/90 shadow-[0_0_12px_rgba(16,185,129,.6)]" />
+          <MetricCard icon={SvgApps} target={8} label="Projects" suffix="+" delay={120} accent="emerald" className="ml-0 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]" />
+        </div>
+        {/* Row 3 */}
+        <div className="flex items-center">
+          <span aria-hidden className="ml-2 mr-3 size-2 rounded-full bg-sky-400/90 shadow-[0_0_12px_rgba(56,189,248,.6)]" />
+          <MetricCard icon={SvgCertificate} target={9} label="Certifications" suffix="+" delay={240} accent="sky" className="ml-0 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function HomePage() {
   const [showStrengths, setShowStrengths] = useState(true);
   const lastY = useRef(0);
+  const tileRef = useRef<HTMLDivElement | null>(null);
+  const onTileMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = tileRef.current; if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const relX = (e.clientX - rect.left) / rect.width;   // 0..1
+    const relY = (e.clientY - rect.top) / rect.height;   // 0..1
+    const dx = relX - 0.5; // -0.5..0.5
+    const dy = relY - 0.5; // -0.5..0.5
+    // rotate a bit and translate slightly to feel magnetic
+    el.style.setProperty('--rx', `${-(dy * 10)}deg`);
+    el.style.setProperty('--ry', `${dx * 10}deg`);
+    el.style.setProperty('--tx', `${dx * 8}px`);
+    el.style.setProperty('--ty', `${dy * 8}px`);
+  };
+  const onTileLeave = () => {
+    const el = tileRef.current; if (!el) return;
+    el.style.setProperty('--rx', '0deg');
+    el.style.setProperty('--ry', '0deg');
+    el.style.setProperty('--tx', '0px');
+    el.style.setProperty('--ty', '0px');
+  };
 
   useEffect(() => {
     const onScroll = () => {
@@ -80,42 +229,42 @@ export default function HomePage() {
               </div>
             </FadeIn>
             <FadeIn delay={0.25}>
-              <div className="mx-auto mt-10 w-full max-w-3xl px-4 md:px-6">
+              <div className="mx-auto mt-10 w-full max-w-5xl px-4 md:px-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6">
                   {/* GenAI & RAG */}
-                  <div className="group relative overflow-hidden rounded-2xl bg-white/[0.06] ring-1 ring-white/10 backdrop-blur supports-[backdrop-filter]:bg-white/[0.06] p-7 md:p-8 h-[190px] md:h-[220px] flex items-start transition-all duration-300 hover:-translate-y-1 hover:ring-white/20 hover:shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+                  <div className="group relative overflow-hidden rounded-2xl bg-white/[0.06] ring-1 ring-white/10 backdrop-blur supports-[backdrop-filter]:bg-white/[0.06] p-7 md:p-8 min-h-[220px] md:min-h-[260px] flex items-start transition-all duration-300 hover:-translate-y-1 hover:ring-white/20 hover:shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
                     <div className="absolute left-0 md:left-2 top-1/2 -translate-y-1/2 w-40 md:w-56 h-40 md:h-56 rounded-full bg-violet-500/10 blur-2xl group-hover:bg-violet-500/20 transition-colors" />
                     <div className="relative z-10 flex gap-4">
                       <span className="inline-grid place-items-center size-12 rounded-xl bg-violet-500/30 ring-1 ring-white/10 text-xl">🧠</span>
-                      <div className="text-left">
+                      <div className="text-left max-w-[240px] md:max-w-[300px] lg:max-w-[320px]">
                         <div className="text-lg md:text-xl font-semibold text-white/90">GenAI & RAG</div>
-                        <p className="mt-1 text-sm text-white/65 leading-snug">Grounded answers with your data. Retrieval‑Augmented Generation that boosts search accuracy.</p>
+                        <p className="mt-1 text-sm md:text-base text-white/70 leading-snug md:leading-normal">Grounded answers with your data. Retrieval‑Augmented Generation that boosts search accuracy.</p>
                       </div>
                     </div>
                     <span className="pointer-events-none absolute inset-0 translate-x-[-60%] bg-gradient-to-r from-transparent via-white/15 to-transparent opacity-0 group-hover:opacity-100 group-hover:translate-x-[120%] transition duration-700" />
                   </div>
 
                   {/* Full‑Stack */}
-                  <div className="group relative overflow-hidden rounded-2xl bg-white/[0.06] ring-1 ring-white/10 backdrop-blur supports-[backdrop-filter]:bg-white/[0.06] p-7 md:p-8 h-[190px] md:h-[220px] flex items-start transition-all duration-300 hover:-translate-y-1 hover:ring-white/20 hover:shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+                  <div className="group relative overflow-hidden rounded-2xl bg-white/[0.06] ring-1 ring-white/10 backdrop-blur supports-[backdrop-filter]:bg-white/[0.06] p-7 md:p-8 min-h-[220px] md:min-h-[260px] flex items-start transition-all duration-300 hover:-translate-y-1 hover:ring-white/20 hover:shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
                     <div className="absolute left-0 md:left-2 top-1/2 -translate-y-1/2 w-40 md:w-56 h-40 md:h-56 rounded-full bg-fuchsia-500/10 blur-2xl group-hover:bg-fuchsia-500/20 transition-colors" />
                     <div className="relative z-10 flex gap-4">
                       <span className="inline-grid place-items-center size-12 rounded-xl bg-violet-500/30 ring-1 ring-white/10 text-xl">🚀</span>
-                      <div className="text-left">
+                      <div className="text-left max-w-[240px] md:max-w-[300px] lg:max-w-[320px]">
                         <div className="text-lg md:text-xl font-semibold text-white/90">Full‑Stack</div>
-                        <p className="mt-1 text-sm text-white/65 leading-snug">React/Next frontends with resilient Java/Spring Boot services and real‑time UX.</p>
+                        <p className="mt-1 text-sm md:text-base text-white/70 leading-snug md:leading-normal">React/Next frontends with resilient Java/Spring Boot services and real‑time UX.</p>
                       </div>
                     </div>
                     <span className="pointer-events-none absolute inset-0 translate-x-[-60%] bg-gradient-to-r from-transparent via-white/15 to-transparent opacity-0 group-hover:opacity-100 group-hover:translate-x-[120%] transition duration-700" />
                   </div>
 
                   {/* Cloud & CI/CD */}
-                  <div className="group relative overflow-hidden rounded-2xl bg-white/[0.06] ring-1 ring-white/10 backdrop-blur supports-[backdrop-filter]:bg-white/[0.06] p-7 md:p-8 h-[190px] md:h-[220px] flex items-start transition-all duration-300 hover:-translate-y-1 hover:ring-white/20 hover:shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+                  <div className="group relative overflow-hidden rounded-2xl bg-white/[0.06] ring-1 ring-white/10 backdrop-blur supports-[backdrop-filter]:bg-white/[0.06] p-7 md:p-8 min-h-[220px] md:min-h-[260px] flex items-start transition-all duration-300 hover:-translate-y-1 hover:ring-white/20 hover:shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
                     <div className="absolute left-0 md:left-2 top-1/2 -translate-y-1/2 w-40 md:w-56 h-40 md:h-56 rounded-full bg-emerald-500/10 blur-2xl group-hover:bg-emerald-500/20 transition-colors" />
                     <div className="relative z-10 flex gap-4">
                       <span className="inline-grid place-items-center size-12 rounded-xl bg-violet-500/30 ring-1 ring-white/10 text-xl">⚡</span>
-                      <div className="text-left">
+                      <div className="text-left max-w-[240px] md:max-w-[300px] lg:max-w-[320px]">
                         <div className="text-lg md:text-xl font-semibold text-white/90">Cloud & CI/CD</div>
-                        <p className="mt-1 text-sm text-white/65 leading-snug">Dockerized deployments and automated pipelines on AWS & GCP with Terraform.</p>
+                        <p className="mt-1 text-sm md:text-base text-white/70 leading-snug md:leading-normal">Dockerized deployments and automated pipelines on AWS & GCP with Terraform.</p>
                       </div>
                     </div>
                     <span className="pointer-events-none absolute inset-0 translate-x-[-60%] bg-gradient-to-r from-transparent via-white/15 to-transparent opacity-0 group-hover:opacity-100 group-hover:translate-x-[120%] transition duration-700" />
@@ -158,7 +307,14 @@ export default function HomePage() {
         <div className="flex justify-center items-center">
           <div className="relative">
             {/* Gradient tile */}
-            <div className="relative w-[300px] h-[320px] md:w-[360px] md:h-[390px] rounded-2xl overflow-hidden ring-1 ring-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
+            <div
+              ref={tileRef}
+              onMouseMove={onTileMove}
+              onMouseLeave={onTileLeave}
+              className="relative w-[300px] h-[320px] md:w-[360px] md:h-[390px] rounded-2xl overflow-hidden ring-1 ring-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.45)] transform-gpu will-change-transform transition-transform duration-300"
+              style={{ transform: 'perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translate3d(var(--tx, 0px), var(--ty, 0px), 0)' }}
+            >
+              <span aria-hidden className="pointer-events-none absolute -inset-6 rounded-[24px] bg-gradient-to-r from-violet-500/10 via-transparent to-emerald-500/10 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="absolute inset-0 bg-[radial-gradient(50%_60%_at_30%_20%,rgba(124,58,237,0.45),transparent_60%),radial-gradient(40%_60%_at_75%_70%,rgba(34,197,94,0.35),transparent_60%),linear-gradient(180deg,rgba(17,24,39,0.9),rgba(17,24,39,0.9))]" />
               {/* floating particles */}
               <span className="absolute top-8 left-1/3 size-2 rounded-full bg-emerald-300/90 animate-pulse" />
@@ -180,6 +336,7 @@ export default function HomePage() {
                 <span>AI Engineer</span>
               </div>
             </div>
+            <div className="mt-3 md:mt-4"><MetricsBar /></div>
           </div>
         </div>
       </main>
@@ -241,6 +398,8 @@ export default function HomePage() {
             inset 0 0 0 1px rgba(255,255,255,0.02);
           transition: transform .35s cubic-bezier(.2,.8,.2,1),
                       box-shadow .35s ease, background .35s ease;
+          z-index: 1;
+          isolation: isolate;
           position: relative;
           overflow: hidden;
         }
@@ -253,6 +412,7 @@ export default function HomePage() {
           background:
             radial-gradient(80% 80% at 10% 0%, rgba(139,92,246,.16), transparent 60%),
             radial-gradient(80% 80% at 90% 100%, rgba(34,197,94,.14), transparent 60%);
+          z-index: -1;
           opacity: .65;
           pointer-events: none;
           transition: opacity .35s ease;
@@ -263,6 +423,7 @@ export default function HomePage() {
           inset:-120% 0 auto 0;
           height: 220%;
           background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+          z-index: -1;
           transform: translateX(-120%);
           transition: transform 1s ease;
           pointer-events: none;
@@ -331,6 +492,11 @@ export default function HomePage() {
           0%   { transform: translateY(0); }
           50%  { transform: translateY(-8px); }
           100% { transform: translateY(0); }
+        }
+        /* metric pills subtle entrance when the right column scrolls into view */
+        @keyframes metric-pop {
+          0% { transform: translateY(6px) scale(.98); opacity: 0; }
+          100% { transform: translateY(0) scale(1); opacity: 1; }
         }
       `}</style>
     </>

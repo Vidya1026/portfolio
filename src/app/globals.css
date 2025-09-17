@@ -634,3 +634,248 @@ html { scroll-behavior: smooth; }
   100% { transform: translateX(120%) skewX(-12deg); opacity: 0; }
 }
 
+
+/* === Overlay bug hotfixes (portfolio) === */
+/* Disable any global ::before/::after decorations that may be spinning above content */
+html::before,
+html::after,
+body::before,
+body::after {
+  content: none !important;
+  background: none !important;
+  pointer-events: none !important;
+}
+
+/* Lower z-index and disable pointer interception for common decorative layers */
+.fx,
+.fx-layer,
+.background-anim,
+.grid-bg,
+.noise,
+.orb,
+.spin-square,
+.decorative,
+.decoration,
+.bg-ornament,
+.hero-overlay,
+.shine-sweep,
+.light-sweep,
+.fx-sheet {
+  pointer-events: none !important;
+  z-index: 0 !important;
+  mix-blend-mode: normal !important;
+}
+
+/* Ensure main app content paints above any fixed backgrounds */
+#root,
+main,
+.app,
+.page,
+.page-content {
+  position: relative;
+  z-index: 1;
+  isolation: isolate; /* new stacking context to contain local effects */
+}
+
+/* Make project cards form their own safe stacking context for glows/hover effects */
+.project-card,
+.card-hover {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+}
+
+
+
+/* Extra kill-switch for stubborn root overlays */
+main::before,
+main::after,
+#home::before,
+#home::after,
+.container::before,
+.container::after {
+  content: none !important;
+  background: none !important;
+  pointer-events: none !important;
+}
+/* Final kill for the diagonal sweep overlay in Projects */
+.projects-area .shine-gradient,
+.projects-area .sweep,
+.projects-area .rotate-sweep,
+.projects-area .aurora-sweep {
+  display: none !important;
+}
+
+/* Disable spotlight mask inside project cards */
+.project-card .spotlight-mask {
+  display: none !important;
+}
+
+/* Remove any ::before/::after shine/sweep inside projects grid */
+.projects-area :where(article, .project-card, .card, .project)::before,
+.projects-area :where(article, .project-card, .card, .project)::after {
+  display: none !important;
+  content: none !important;
+}
+/* === Certifications: premium polish & animations === */
+/* Host container from certifications-section.tsx */
+.cert-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  transition: transform 220ms cubic-bezier(.2,.9,.2,1), box-shadow 220ms ease, border-color 220ms ease;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.06);
+}
+.cert-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 10px 26px rgba(0,0,0,0.45),
+    0 0 0 1px rgba(139,92,246,0.35);
+}
+
+/* Inner content refinement */
+.cert-card-inner {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  backdrop-filter: blur(2px);
+  border-radius: 14px; /* inset within host radius */
+}
+.cert-card:hover .cert-card-inner { border-color: rgba(139,92,246,0.35); }
+
+/* Sheen sweep for cert cards (CSS-only, element <div class="card-sheen" /> exists inside host) */
+.cert-card .card-sheen { position: absolute; inset: -1px; pointer-events: none; }
+.cert-card .card-sheen::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(120deg,
+    transparent 46%,
+    rgba(255,255,255,0.10) 50%,
+    transparent 54%);
+  transform: translateX(-120%) rotate(.25deg);
+  transition: transform 900ms ease;
+  mix-blend-mode: screen;
+}
+.cert-card:hover .card-sheen::after { transform: translateX(120%) rotate(.25deg); }
+
+/* Logo glow ring (soft, only on hover) */
+.cert-logo { position: relative; }
+.cert-logo::after {
+  content: "";
+  position: absolute; inset: -4px; border-radius: 10px;
+  background: radial-gradient(closest-side, rgba(167,139,250,.28), transparent 70%);
+  opacity: 0; pointer-events: none; transition: opacity 220ms ease;
+}
+.cert-card:hover .cert-logo::after { opacity: 1; }
+
+/* Verify button micro‑interaction */
+.btn-verify {
+  border: 1px solid rgba(255,255,255,0.12);
+  background: linear-gradient(180deg, rgba(139,92,246,0.24), rgba(139,92,246,0.12));
+  color: rgba(250,250,255,0.96);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.04), inset 0 0 14px rgba(139,92,246,0.18);
+  transform: translateZ(0);
+}
+.btn-verify:hover {
+  background: linear-gradient(180deg, rgba(139,92,246,0.32), rgba(139,92,246,0.18));
+  box-shadow: 0 8px 20px rgba(139,92,246,0.30), inset 0 0 18px rgba(139,92,246,0.24);
+  transform: translateY(-1px);
+}
+.btn-verify:active { transform: translateY(0); }
+
+/* Optional checkmark appears smoothly before the label */
+.btn-verify { position: relative; }
+.btn-verify::before {
+  content: "✓";
+  position: relative;
+  display: inline-block;
+  margin-right: 4px;
+  transform: translateX(-6px) scale(.9);
+  opacity: 0;
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+.btn-verify:hover::before { transform: translateX(0) scale(1); opacity: .9; }
+
+
+
+
+/* === Experience timeline & card polish === */
+
+/* Vertical line in section (we added .exp-line caps in section) */
+.exp-line {
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    rgba(139,92,246,.6),
+    rgba(34,211,238,.35)
+  );
+  filter: drop-shadow(0 0 10px rgba(139,92,246,.35));
+}
+.exp-line-cap {
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, rgba(139,92,246,.5));
+}
+.exp-line-cap--bottom {
+  background: linear-gradient(to bottom, rgba(34,211,238,.45), transparent);
+}
+
+/* Per-item connector & dot */
+.exp-connector {
+  background: linear-gradient(
+    to bottom,
+    rgba(139,92,246,.55),
+    rgba(34,211,238,.35)
+  );
+  box-shadow: 0 0 10px rgba(139,92,246,.35);
+}
+.exp-dot {
+  width: 14px; height: 14px; border-radius: 9999px;
+  background: radial-gradient(circle at 40% 40%, rgba(167,139,250,.95), rgba(167,139,250,.3) 60%, transparent 70%);
+  box-shadow:
+    0 0 24px rgba(167,139,250,.55),
+    0 0 2px rgba(255,255,255,.4) inset;
+  animation: exp-dot-pulse 2.4s ease-in-out infinite;
+}
+@keyframes exp-dot-pulse {
+  0%, 100% { transform: scale(1); opacity: .95; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+
+/* Card host with sheen (reuses .card-sheen logic you already have) */
+.exp-card {
+  transition: transform 240ms cubic-bezier(.2,.9,.2,1), box-shadow 240ms ease;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
+}
+.exp-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 10px 26px rgba(0,0,0,0.45),
+    0 0 0 1px rgba(139,92,246,0.35);
+}
+/* reuse sheen but slightly brighter for experience */
+.exp-card .card-sheen { position: absolute; inset: -1px; pointer-events: none; }
+.exp-card .card-sheen::after {
+  content: "";
+  position: absolute; inset: -1px;
+  background: linear-gradient(120deg, transparent 46%, rgba(255,255,255,0.12) 50%, transparent 54%);
+  transform: translateX(-120%) rotate(.25deg);
+  transition: transform 900ms ease;
+  mix-blend-mode: screen;
+}
+.exp-card:hover .card-sheen::after { transform: translateX(120%) rotate(.25deg); }
+
+/* Logo halo on hover */
+.exp-logo::after {
+  content: "";
+  position: absolute; inset: -6px; border-radius: 10px;
+  background: radial-gradient(closest-side, rgba(167,139,250,.28), transparent 70%);
+  opacity: 0; pointer-events: none; transition: opacity 220ms ease;
+}
+.exp-card:hover .exp-logo::after { opacity: 1; }
+
+/* Custom glowing bullets */
+.exp-bullet {
+  width: 6px; height: 6px; border-radius: 9999px; flex: 0 0 auto;
+  background: radial-gradient(circle, rgba(167,139,250,.9), rgba(167,139,250,.3) 60%, transparent 70%);
+  box-shadow: 0 0 10px rgba(167,139,250,.45);
+}

@@ -16,7 +16,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className="dark" suppressHydrationWarning>
       <body className={`${inter.className} bg-background text-foreground antialiased`}>
         <SiteNav />
-        <main id="home">{children}</main>
+        <main id="home" className="relative z-10 isolate">
+          <div className="app relative z-10 isolate">
+            {children}
+          </div>
+        </main>
         <div id="chat" />
         <ChatWidget />
       </body>

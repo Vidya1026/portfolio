@@ -72,7 +72,7 @@ const sample: ProjectItem[] = [
 
 export default function ProjectsSection() {
   return (
-    <section className="relative py-18 md:py-24">
+    <section className="relative z-10 isolate py-18 md:py-24">
       <div className="container">
         {/* Heading block */}
         <FadeIn>
@@ -93,13 +93,13 @@ export default function ProjectsSection() {
         </FadeIn>
 
         {/* Card grid */}
-        <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 place-items-stretch">
+        <div className="relative z-10 isolate mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 place-items-stretch">
           {sample.map((p, i) => (
             <FadeIn key={p.title} delay={i * 0.08}>
               {/* Glow + wiggle wrapper without touching ProjectCard internals */}
               <div
                 className="
-                  group relative
+                  group relative z-0
                   [--halo:theme(colors.violet.500/18)]
                   [--ring:conic-gradient(from_180deg,theme(colors.violet.500/.4),theme(colors.fuchsia.500/.35),theme(colors.cyan.400/.35),theme(colors.violet.500/.4))]
                   hover:animate-[wiggle_800ms_ease-in-out]
@@ -108,23 +108,12 @@ export default function ProjectsSection() {
                 "
               >
                 {/* animated gradient ring on hover */}
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute -inset-[2px] rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                  style={{
-                    background: "var(--ring)",
-                    WebkitMask:
-                      "linear-gradient(#000_0_0) content-box, linear-gradient(#000_0_0)",
-                    WebkitMaskComposite: "xor" as any,
-                    maskComposite: "exclude" as any,
-                    padding: "2px",
-                    animation: "spin-slow 10s linear infinite",
-                  }}
-                />
                 {/* soft halo */}
-                <div className="pointer-events-none absolute -inset-1.5 rounded-2xl bg-[radial-gradient(30%_40%_at_50%_0%,var(--halo),transparent_70%)] opacity-0 group-hover:opacity-80 transition-opacity duration-300" />
+                <div className="pointer-events-none absolute -inset-1.5 rounded-2xl bg-[radial-gradient(30%_40%_at_50%_0%,var(--halo),transparent_70%)] opacity-0 group-hover:opacity-80 transition-opacity duration-300 -z-10" />
                 {/* card host (enforce minimum height so cards feel tall) */}
-                <div className="relative min-h-[460px] flex rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-[0.5px]">
+                <div className="relative z-10 isolate min-h-[460px] flex rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-[0.5px] overflow-hidden project-card">
+                  {/* subtle sheen sweep (CSS-only, defined in globals.css) */}
+                  <div aria-hidden className="card-sheen" />
                   {/* Pass enriched project object. ProjectCard can pick up any extra fields later. */}
                   <ProjectCard p={p as any} />
                 </div>
