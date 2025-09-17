@@ -184,16 +184,7 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* Projects */}
-      <section id="projects" className="section-anchor pt-6">
-        <div className="mx-auto w-full max-w-6xl section-gutter px-4 md:px-6">
-          <FadeIn>
-            <div className="card-hover rounded-2xl ring-1 ring-white/10 bg-gradient-to-r from-violet-500/5 to-emerald-500/5 transition-all duration-500 motion-safe:hover:translate-x-0.5 motion-safe:hover:-translate-y-0.5 hover:from-violet-500/10 hover:to-emerald-500/10">
-              <ProjectsSection />
-            </div>
-          </FadeIn>
-        </div>
-      </section>
+      {/* Experience (moved above projects) */}
       <section id="experience" className="section-anchor pt-8">
         <div className="mx-auto w-full max-w-6xl section-gutter px-4 md:px-6">
           <FadeIn>
@@ -204,12 +195,109 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Projects — left-aligned grid of glowing cards */}
+      <section id="projects" className="section-anchor pt-10">
+        <div className="mx-auto w-full max-w-6xl section-gutter px-4 md:px-6">
+          <FadeIn>
+            <div className="projects-area">
+              <ProjectsSection />
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
       <CertificationsSection />
 
+      <footer className="mt-12 md:mt-16 border-t border-white/5">
+        <div className="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-12 text-center">
+          <p className="text-sm text-white/55">
+            © 2025 Gunapu Bhargava Sai Vardhan. All rights reserved.
+          </p>
+        </div>
+      </footer>
+
       <section id="chat" className="section-anchor" />
+      <style jsx global>{`
+        /* Make inner project grid left‑aligned and stretch cards */
+        .projects-area :where(.grid){
+          justify-items: stretch;
+        }
+        /* Keep cards/grid left‑aligned but allow the section header to be centered */
+        .projects-area .grid .section-title,
+        .projects-area .grid h2{
+          text-align: left;
+          margin-left: 0;
+        }
+
+        /* Card base for anything resembling a project card */
+        .projects-area :where(article, .project-card, .card, .project){
+          border-radius: 20px;
+          background: rgba(255,255,255,0.04);
+          -webkit-backdrop-filter: blur(8px);
+          backdrop-filter: blur(8px);
+          box-shadow:
+            0 0 0 1px rgba(255,255,255,0.08),
+            0 14px 44px rgba(0,0,0,0.50),
+            inset 0 0 0 1px rgba(255,255,255,0.02);
+          transition: transform .35s cubic-bezier(.2,.8,.2,1),
+                      box-shadow .35s ease, background .35s ease;
+          position: relative;
+          overflow: hidden;
+        }
+
+        /* Subtle gradient wash + shimmer on hover */
+        .projects-area :where(article, .project-card, .card, .project)::before{
+          content: "";
+          position: absolute;
+          inset: 0;
+          background:
+            radial-gradient(80% 80% at 10% 0%, rgba(139,92,246,.16), transparent 60%),
+            radial-gradient(80% 80% at 90% 100%, rgba(34,197,94,.14), transparent 60%);
+          opacity: .65;
+          pointer-events: none;
+          transition: opacity .35s ease;
+        }
+        .projects-area :where(article, .project-card, .card, .project)::after{
+          content:"";
+          position:absolute;
+          inset:-120% 0 auto 0;
+          height: 220%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+          transform: translateX(-120%);
+          transition: transform 1s ease;
+          pointer-events: none;
+        }
+
+        /* Wiggle + lift + stronger glow on hover */
+        .projects-area :where(article, .project-card, .card, .project):hover{
+          transform: translateY(-8px) rotate(.3deg);
+          box-shadow:
+            0 0 0 1px rgba(167,139,250,0.55),
+            0 24px 80px rgba(124,58,237,0.28),
+            0 14px 44px rgba(34,197,94,0.2);
+        }
+        .projects-area :where(article, .project-card, .card, .project):hover::after{
+          transform: translateX(120%);
+        }
+
+        /* tiny wiggle animation on focus-visible to aid keyboard users */
+        @keyframes card-wiggle {
+          0%   { transform: translateY(-8px) rotate(.25deg); }
+          50%  { transform: translateY(-10px) rotate(-.2deg); }
+          100% { transform: translateY(-8px) rotate(.25deg); }
+        }
+        .projects-area :where(article, .project-card, .card, .project):focus-visible{
+          outline: none;
+          animation: card-wiggle .65s ease-in-out;
+          box-shadow:
+            0 0 0 2px rgba(167,139,250,0.6),
+            0 20px 60px rgba(124,58,237,0.35),
+            0 14px 40px rgba(34,197,94,0.22);
+        }
+      `}</style>
       <style jsx>{`
         .marquee {
-          animation: ribbon-scroll 25s linear infinite;
+          animation: ribbon-scroll 28s linear infinite;
         }
         .group\/ribbon:hover .marquee {
           animation-play-state: paused;

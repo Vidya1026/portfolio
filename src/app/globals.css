@@ -144,6 +144,63 @@
     mask-image: radial-gradient(180px 180px at var(--x,50%) var(--y,50%), #000 0%, transparent 70%);
     -webkit-mask-image: radial-gradient(180px 180px at var(--x,50%) var(--y,50%), #000 0%, transparent 70%);
   }
+
+  /* Slow continuous rotation (used for conic rings) */
+  .animate-spin-slow {
+    animation: spin-slow 18s linear infinite;
+  }
+
+  /* One-time angled shine sweep (triggered on hover via group) */
+  .animate-shine {
+    animation: shine 1200ms ease-out forwards;
+  }
+
+  /* Reusable diagonal shine gradient */
+  .shine-gradient {
+    pointer-events: none;
+    background: linear-gradient(
+      115deg,
+      transparent 0%,
+      rgba(255,255,255,0.02) 15%,
+      rgba(255,255,255,0.06) 50%,
+      rgba(255,255,255,0.03) 65%,
+      transparent 100%
+    );
+    mix-blend-mode: screen;
+    filter: blur(0.25px);
+    opacity: .9;
+  }
+
+  /* Subtle, bounded sheen for cards */
+  .card-sheen { position: relative; overflow: hidden; }
+  .card-sheen::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    background: linear-gradient(120deg,
+      transparent 46%,
+      rgba(255,255,255,0.08) 50%,
+      transparent 54%);
+    transform: translateX(-120%) rotate(.25deg);
+    transition: transform 800ms ease;
+    mix-blend-mode: screen;
+    pointer-events: none;
+  }
+  .card-sheen:hover::after { transform: translateX(120%) rotate(.25deg); }
+  @media (prefers-reduced-motion: reduce) {
+    .card-sheen::after, .card-sheen:hover::after { transition: none; transform: none; background: none; }
+  }
+
+  /* Kill any legacy wide sweep overlays if present */
+  .shine-sweep, .light-sweep, .fx-sheet { display: none !important; }
+
+  /* Nuke any legacy rotating sweep inside project cards */
+  .project-card .animate-spin-slow,
+  .project-card .aurora-sweep,
+  .project-card .rotate-sweep,
+  .project-card .sweep,
+  .project-card .fx-sheet,
+  .project-card .light-sweep { display: none !important; }
 }
 
 /* ==== Base animated aurora background ==== */
@@ -565,3 +622,15 @@ html { scroll-behavior: smooth; }
 
 /* Optional section gutter if you want a bit more left/right spacing */
 .section-gutter { padding-left: clamp(16px, 5vw, 56px); padding-right: clamp(16px, 5vw, 56px); }
+
+/* === Keyframes for project card effects === */
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shine {
+  0%   { transform: translateX(-120%) skewX(-12deg); opacity: 0; }
+  20%  { opacity: .85; }
+  100% { transform: translateX(120%) skewX(-12deg); opacity: 0; }
+}
+
