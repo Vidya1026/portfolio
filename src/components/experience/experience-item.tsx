@@ -3,17 +3,34 @@
 import { FadeIn } from "@/components/motion/FadeIn";
 import { cn } from "@/lib/utils";
 
+function toArray(value: string | string[] | undefined): string[] {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  if (typeof value === "string") {
+    return value
+      .split(/[|,\n]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
 type Props = {
   org: string;
   role: string;
   start: string;
   end: string;
-  bullets: string[];
+  bullets: string | string[];
+  tools?: string | string[];
   logoUrl?: string;
   last?: boolean;
 };
 
-export function ExperienceItem({ org, role, start, end, bullets, logoUrl, last }: Props) {
+export function ExperienceItem({ org, role, start, end, bullets, tools, logoUrl, last }: Props) {
+  const bulletsArr = toArray(bullets);
+  const toolsArr = toArray(tools);
+
   return (
     <FadeIn className="relative pl-10 sm:pl-14">
       {/* timeline line */}
@@ -54,13 +71,26 @@ export function ExperienceItem({ org, role, start, end, bullets, logoUrl, last }
         </div>
 
         <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-          {bullets.map((b, i) => (
+          {bulletsArr.map((b, i) => (
             <li key={i} className="flex gap-2">
               <span aria-hidden className="exp-bullet mt-1.5" />
               <span>{b}</span>
             </li>
           ))}
         </ul>
+
+        {toolsArr.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {toolsArr.map((t, i) => (
+              <span
+                key={i}
+                className="px-2.5 py-1 text-xs rounded-full bg-emerald-400/10 text-emerald-200 ring-1 ring-emerald-400/40 shadow-[0_0_14px_rgba(16,185,129,0.45)]"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </FadeIn>
   );

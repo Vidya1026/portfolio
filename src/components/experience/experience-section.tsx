@@ -12,7 +12,7 @@ export default function ExperienceSection() {
     (async () => {
       const { data, error } = await supabase
         .from("experience")
-        .select("id, org, role, start, end, bullets, logo_url, published, sort_order")
+        .select("*")
         .eq("published", true)
         .order("sort_order", { ascending: true })
         .order("start", { ascending: false });
@@ -24,7 +24,16 @@ export default function ExperienceSection() {
             role: e.role,
             start: e.start,
             end: e.end,
-            bullets: e.bullets ?? [],
+            bullets: Array.isArray(e.bullets)
+              ? e.bullets
+              : typeof e.bullets === "string"
+                ? e.bullets.split("|").map((s: string) => s.trim()).filter(Boolean)
+                : [],
+            tools: Array.isArray(e.tools)
+              ? e.tools
+              : typeof e.tools === "string"
+                ? e.tools.split(",").map((s: string) => s.trim()).filter(Boolean)
+                : [],
             logoUrl: e.logo_url,
           }))
         );
@@ -66,7 +75,17 @@ export default function ExperienceSection() {
           <div aria-hidden className="exp-line-cap exp-line-cap--bottom pointer-events-none absolute left-4 sm:left-6 -bottom-6 h-6 w-px -z-10" />
           <div className="space-y-6">
             {items.map((it, idx) => (
-              <ExperienceItem key={idx} {...it} last={idx === items.length - 1} />
+              <ExperienceItem
+                key={idx}
+                org={it.org}
+                role={it.role}
+                start={it.start}
+                end={it.end}
+                bullets={it.bullets}
+                tools={it.tools}
+                logoUrl={it.logoUrl}
+                last={idx === items.length - 1}
+              />
             ))}
           </div>
         </div>

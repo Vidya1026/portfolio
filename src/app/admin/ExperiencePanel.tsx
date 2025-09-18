@@ -25,6 +25,7 @@ type ExperienceRow = {
   start?: string;
   end?: string;
   bullets?: string[];
+  tools?: string[] | string; // ← allow legacy string too
   logo_url?: string;
   sort_order?: number;
   published?: boolean;
@@ -44,6 +45,22 @@ function parseBullets(input: string) {
     .filter(Boolean);
 }
 
+function parseTools(input: string) {
+  return input
+    .split(/\r?\n|\||,/g)
+    .map((x) => x.trim())
+    .filter(Boolean);
+}
+function toComma(a?: string[]) {
+  return (a ?? []).join(', ');
+}
+
+function normalizeTools(t?: string[] | string | null): string[] {
+  if (!t) return [];
+  if (Array.isArray(t)) return t.filter(Boolean);
+  return parseTools(t);
+}
+
 export default function ExperiencePanel() {
   const [rows, setRows] = useState<ExperienceRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,6 +69,7 @@ export default function ExperiencePanel() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [bulletsText, setBulletsText] = useState("");
+  const [toolsText, setToolsText] = useState("");
 
   const [form, setForm] = useState<ExperienceRow>({
     org: '',
@@ -59,12 +77,13 @@ export default function ExperiencePanel() {
     start: '',
     end: '',
     bullets: [],
+    tools: [],
     logo_url: '',
     sort_order: 999,
     published: true,
   });
 
-  useEffect(() => { setBulletsText(""); }, []);
+  useEffect(() => { setBulletsText(""); setToolsText(""); }, []);
 
   async function load() {
     setLoading(true);
@@ -73,7 +92,13 @@ export default function ExperiencePanel() {
       .select('*')
       .order('sort_order', { ascending: true })
       .order('start', { ascending: false });
-    if (!error && data) setRows(data as any);
+    if (!error && data) {
+      const normalized = (data as any[]).map((r) => ({
+        ...r,
+        tools: normalizeTools(r.tools),
+      }));
+      setRows(normalized as any);
+    }
     setLoading(false);
   }
 
@@ -89,6 +114,7 @@ export default function ExperiencePanel() {
       const payload: ExperienceRow = {
         ...form,
         bullets: parseBullets(bulletsText) ?? [],
+        tools: parseTools(toolsText) ?? [],
         sort_order: Number(form.sort_order ?? 999),
         published: !!form.published,
       };
@@ -102,11 +128,13 @@ export default function ExperiencePanel() {
         start: '',
         end: '',
         bullets: [],
+        tools: [],
         logo_url: '',
         sort_order: 999,
         published: true,
       });
       setBulletsText('');
+      setToolsText('');
       await load();
     } catch (err: any) {
       setMsg(err.message || 'Save failed');
@@ -142,11 +170,13 @@ export default function ExperiencePanel() {
       start: r.start || '',
       end: r.end || '',
       bullets: r.bullets || [],
+      tools: normalizeTools(r.tools),
       logo_url: r.logo_url || '',
       sort_order: r.sort_order ?? 999,
       published: r.published !== false,
     });
     setBulletsText(toPipe(r.bullets));
+    setToolsText(toComma(normalizeTools(r.tools)));
   }
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -246,6 +276,28 @@ export default function ExperiencePanel() {
         </label>
 
         <label className="flex flex-col gap-1">
+          <span className="text-xs text-white/70">Tools (comma, | or new line)</span>
+          <input
+            className="rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-white"
+            value={toolsText}
+            onChange={e => setToolsText(e.target.value)}
+            placeholder="TypeScript, React, Next.js, Supabase, Tailwind"
+          />
+          {parseTools(toolsText).length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {parseTools(toolsText).map((t) => (
+                <span
+                  key={t}
+                  className="text-[11px] tracking-wide rounded-md border px-2 py-1 text-emerald-200 border-emerald-400/30 bg-emerald-500/10 shadow-[0_0_18px_rgba(16,185,129,0.35)]"
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+          )}
+        </label>
+
+        <label className="flex flex-col gap-1">
           <span className="text-xs text-white/70">Logo URL</span>
           <input
             className="rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-white"
@@ -329,7 +381,7 @@ export default function ExperiencePanel() {
           {form.id && (
             <button
               type="button"
-              onClick={() => { setForm({ id: undefined, org: '', role: '', start: '', end: '', bullets: [], logo_url: '', sort_order: 999, published: true }); setBulletsText(''); }}
+              onClick={() => { setForm({ id: undefined, org: '', role: '', start: '', end: '', bullets: [], tools: [], logo_url: '', sort_order: 999, published: true }); setBulletsText(''); setToolsText(''); }}
               className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-white hover:bg-white/15 transition"
             >
               Cancel Edit
@@ -359,6 +411,18 @@ export default function ExperiencePanel() {
                       {r.published ? 'Published' : 'Draft'}
                     </span>
                   </div>
+                  {normalizeTools(r.tools).length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      {normalizeTools(r.tools).map((t) => (
+                        <span
+                          key={t}
+                          className="text-[10px] rounded border px-1.5 py-0.5 text-emerald-200 border-emerald-400/30 bg-emerald-500/10 shadow-[0_0_14px_rgba(16,185,129,0.3)]"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={() => editRow(r)} className="text-xs rounded-lg border border-white/15 px-2 py-1 text-white/80 hover:bg-white/10">Edit</button>
