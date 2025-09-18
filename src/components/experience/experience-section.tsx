@@ -2,33 +2,38 @@
 
 import { FadeIn } from "@/components/motion/FadeIn";
 import { ExperienceItem } from "./experience-item";
-
-const items = [
-  {
-    org: "Your Company / Project",
-    role: "Full-Stack Engineer",
-    start: "2024",
-    end: "Present",
-    bullets: [
-      "Built React/Next frontends and Java/Spring backends with clean, testable code.",
-      "Implemented RAG features (Gemini + pgvector) to ground answers in docs.",
-      "Optimized performance: reduced TTFB by 35% and page weight by 28%.",
-    ],
-  },
-  {
-    org: "Client / Internship",
-    role: "Software Engineer",
-    start: "2023",
-    end: "2024",
-    bullets: [
-      "Delivered real-time dashboards with WebSockets + Redis pub/sub.",
-      "Cut load time by ~60% using smart caching and image optimization.",
-      "Led UI polish: micro-interactions, scroll scenes, and accessibility passes.",
-    ],
-  },
-];
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
 
 export default function ExperienceSection() {
+  const [items, setItems] = useState<any[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from("experience")
+        .select("id, org, role, start, end, bullets, logo_url, published, sort_order")
+        .eq("published", true)
+        .order("sort_order", { ascending: true })
+        .order("start", { ascending: false });
+
+      if (!error && data) {
+        setItems(
+          data.map((e: any) => ({
+            org: e.org,
+            role: e.role,
+            start: e.start,
+            end: e.end,
+            bullets: e.bullets || [],
+            logo_url: e.logo_url,
+          }))
+        );
+      } else {
+        setItems([]);
+      }
+    })();
+  }, []);
+
   return (
     <section className="relative z-10 isolate py-16 md:py-24">
       <div className="container relative">

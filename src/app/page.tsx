@@ -9,6 +9,7 @@ import Image from "next/image";
 
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { supabase } from "@/lib/supabase/client";
 
 // --- Animated metrics (Years / Projects / Certifications) ---
 function useCount(target: number, active: boolean, duration = 1200) {
@@ -138,6 +139,17 @@ function MetricsBar() {
 
 export default function HomePage() {
   const [showStrengths, setShowStrengths] = useState(true);
+  const [settings, setSettings] = useState({
+    hero_title: "",
+    hero_tagline: "",
+    metrics_years: "",
+    metrics_projects: "",
+    metrics_certs: "",
+    skills: [] as string[],
+    resume_url: "",
+    contact_email: "",
+    avatar_url: "",
+  });
   const lastY = useRef(0);
   const tileRef = useRef<HTMLDivElement | null>(null);
   const onTileMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -173,14 +185,56 @@ export default function HomePage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Optional profile image from env (drop a file in /public and set URL)
-  const profileUrl = process.env.NEXT_PUBLIC_PROFILE_URL;
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('*')
+        .limit(1)
+        .maybeSingle();
+      if (!error && data) {
+        setSettings({
+          hero_title: data.hero_title ?? "",
+          hero_tagline: data.hero_tagline ?? "",
+          metrics_years: data.metrics_years ?? "",
+          metrics_projects: data.metrics_projects ?? "",
+          metrics_certs: data.metrics_certs ?? "",
+          skills: Array.isArray(data.skills) ? data.skills : [],
+          resume_url: data.resume_url ?? "",
+          contact_email: data.contact_email ?? "",
+          avatar_url: data.avatar_url ?? "",
+        });
+      }
+    })();
+  }, []);
 
-  const ribbonItems = [
-    "Next.js", "React", "TypeScript", "Tailwind", "LangChain", "RAG",
-    "Postgres", "Redis", "Spring Boot", "WebSockets", "Docker",
-    "GCP", "AWS", "Terraform", "Prisma", "FastAPI"
-  ];
+  function parseMetric(input: string | undefined, fallbackNum: number, fallbackSuffix = "") {
+    const s = (input || "").trim();
+    let num = fallbackNum;
+    let suffix = fallbackSuffix;
+    if (s) {
+      const m = s.match(/^(\d+)/);
+      if (m) num = parseInt(m[1], 10);
+      if (/\+$/.test(s)) suffix = "+";
+    }
+    return { num, suffix };
+  }
+
+  const mYears = parseMetric(settings.metrics_years, 3);
+  const mProjects = parseMetric(settings.metrics_projects, 8, "+");
+  const mCerts = parseMetric(settings.metrics_certs, 9, "+");
+
+  // Optional profile image from env (drop a file in /public and set URL)
+  const profileUrl = settings.avatar_url || process.env.NEXT_PUBLIC_PROFILE_URL;
+
+  const ribbonItems = (settings.skills && settings.skills.length > 0
+    ? settings.skills
+    : [
+        "Next.js", "React", "TypeScript", "Tailwind", "LangChain", "RAG",
+        "Postgres", "Redis", "Spring Boot", "WebSockets", "Docker",
+        "GCP", "AWS", "Terraform", "Prisma", "FastAPI"
+      ]
+  );
 
   return (
     <>
@@ -196,23 +250,29 @@ export default function HomePage() {
                 </span>
               </div>
               <h1 className="inline-block text-4xl md:text-6xl font-extrabold tracking-tight gradient-text leading-[1.15] pb-1">
-                Bhargava — Full-Stack • AI/RAG
+                {settings.hero_title || "Bhargava — Full-Stack • AI/RAG"}
               </h1>
             </FadeIn>
             <FadeIn delay={0.1}>
               <p className="text-muted-foreground max-w-xl mx-auto">
-                Clean React/Next frontends. Resilient Java/Spring backends. RAG systems that ship.
+                {settings.hero_tagline || "Clean React/Next frontends. Resilient Java/Spring backends. RAG systems that ship."}
               </p>
             </FadeIn>
             <FadeIn delay={0.2}>
               <div className="flex items-center justify-center gap-3">
-                <Button
-                  size="lg"
-                  className="group relative overflow-hidden rounded-xl btn-green-glow px-6 py-3 font-semibold"
-                >
-                  <span className="relative z-10">View Resume</span>
-                  <span className="pointer-events-none absolute inset-0 -translate-x-1/2 bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-0 group-hover:opacity-100 transition duration-700 group-hover:translate-x-[120%]" />
-                </Button>
+                {settings.resume_url ? (
+                  <Button asChild size="lg" className="group relative overflow-hidden rounded-xl btn-green-glow px-6 py-3 font-semibold">
+                    <a href={settings.resume_url} target="_blank" rel="noreferrer noopener">
+                      <span className="relative z-10">View Resume</span>
+                      <span className="pointer-events-none absolute inset-0 -translate-x-1/2 bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-0 group-hover:opacity-100 transition duration-700 group-hover:translate-x-[120%]" />
+                    </a>
+                  </Button>
+                ) : (
+                  <Button size="lg" className="group relative overflow-hidden rounded-xl btn-green-glow px-6 py-3 font-semibold">
+                    <span className="relative z-10">View Resume</span>
+                    <span className="pointer-events-none absolute inset-0 -translate-x-1/2 bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-0 group-hover:opacity-100 transition duration-700 group-hover:translate-x-[120%]" />
+                  </Button>
+                )}
 
                 <Button
                   variant="secondary"
@@ -220,7 +280,7 @@ export default function HomePage() {
                   size="lg"
                   className="group relative overflow-hidden rounded-xl bg-transparent border border-violet-400/60 text-violet-200 hover:bg-violet-500/15 px-6 py-3 font-semibold shadow-[0_0_0_1px_rgba(139,92,246,0.55),0_0_24px_rgba(139,92,246,0.35)] hover:shadow-[0_0_0_1px_rgba(167,139,250,0.8),0_0_36px_rgba(167,139,250,0.55)] transition-transform duration-300 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-violet-400/50"
                 >
-                  <a href="mailto:hello@example.com" className="relative z-10 inline-flex items-center gap-2">
+                  <a href={`mailto:${settings.contact_email || 'hello@example.com'}`} className="relative z-10 inline-flex items-center gap-2">
                     <span className="i-tabler-mail text-[18px]" />
                     Email Me
                     <span className="pointer-events-none absolute inset-0 -translate-x-1/2 bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-0 group-hover:opacity-100 transition duration-700 group-hover:translate-x-[120%]" />
@@ -330,13 +390,26 @@ export default function HomePage() {
                   )}
                 </div>
               </div>
-              {/* role label */}
-              <div className="absolute bottom-10 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 ring-1 ring-white/15 text-[13px] text-white/90 backdrop-blur-md">
-                <span className="inline-block size-1.5 rounded-full bg-emerald-300 animate-pulse" />
-                <span>AI Engineer</span>
+            </div>
+            <div className="mt-3 md:mt-4">
+              <div className="mt-4 relative">
+                <div aria-hidden className="pointer-events-none absolute left-3 md:left-4 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-white/15 to-transparent" />
+                <div className="relative flex flex-col gap-5">
+                  <div className="flex items-center">
+                    <span aria-hidden className="ml-2 mr-3 size-2 rounded-full bg-violet-400/90 shadow-[0_0_12px_rgba(139,92,246,.6)]" />
+                    <MetricCard icon={SvgBriefcase} target={mYears.num} label="Years" delay={0} accent="violet" className="ml-0 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]" />
+                  </div>
+                  <div className="flex items-center">
+                    <span aria-hidden className="ml-2 mr-3 size-2 rounded-full bg-emerald-400/90 shadow-[0_0_12px_rgba(16,185,129,.6)]" />
+                    <MetricCard icon={SvgApps} target={mProjects.num} label="Projects" suffix={mProjects.suffix} delay={120} accent="emerald" className="ml-0 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]" />
+                  </div>
+                  <div className="flex items-center">
+                    <span aria-hidden className="ml-2 mr-3 size-2 rounded-full bg-sky-400/90 shadow-[0_0_12px_rgba(56,189,248,.6)]" />
+                    <MetricCard icon={SvgCertificate} target={mCerts.num} label="Certifications" suffix={mCerts.suffix} delay={240} accent="sky" className="ml-0 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]" />
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="mt-3 md:mt-4"><MetricsBar /></div>
           </div>
         </div>
       </main>

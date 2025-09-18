@@ -20,6 +20,8 @@ type Project = {
   ctaLive?: string;
   ctaCode?: string;
   ctaCase?: string;
+  ctaYoutube?: string;
+  ctaDocs?: string;
 };
 
 export function ProjectCard({ p, className }: { p: Project; className?: string }) {
@@ -28,7 +30,7 @@ export function ProjectCard({ p, className }: { p: Project; className?: string }
       className={cn(
         "project-card group relative z-10 isolate overflow-hidden",                // enable group-hover & clip local shine
         "glass rounded-2xl ring-1 ring-white/10 bg-white/[0.05] backdrop-blur-md",
-        "min-h-[460px] md:min-h-[520px] p-6 md:p-7 flex flex-col justify-start",
+        "min-h-[460px] md:min-h-[520px] p-6 md:p-7 pr-7 md:pr-8 pb-6 md:pb-7 flex flex-col justify-start",
         "shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_14px_44px_rgba(0,0,0,0.45)]",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/40",
         "transition-all duration-300",
@@ -78,13 +80,13 @@ export function ProjectCard({ p, className }: { p: Project; className?: string }
       ) : null}
 
       {/* footer actions */}
-      <div className="footer mt-5 flex items-center gap-2">
+      <div className="footer mt-5 flex flex-wrap items-center gap-2">
         {p.ctaLive ? (
           <a
             href={p.ctaLive}
             target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-sm text-white/90 hover:bg-white/10 hover:shadow-[0_8px_24px_rgba(124,58,237,0.25)] transition"
+            rel="noreferrer noopener"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-sm text-white/90 hover:bg-white/10 hover:shadow-[0_8px_24px_rgba(124,58,237,0.25)] transition whitespace-nowrap"
           >
             <span className="i-tabler-external-link text-[16px]" />
             Live
@@ -95,11 +97,24 @@ export function ProjectCard({ p, className }: { p: Project; className?: string }
           <a
             href={p.ctaCode}
             target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-xl border border-violet-400/30 bg-violet-500/15 px-3 py-1.5 text-sm text-violet-100 hover:shadow-[0_8px_24px_rgba(124,58,237,0.35)] transition"
+            rel="noreferrer noopener"
+            className="inline-flex items-center gap-2 rounded-xl border border-violet-400/30 bg-violet-500/15 px-3 py-1.5 text-sm text-violet-100 hover:shadow-[0_8px_24px_rgba(124,58,237,0.35)] transition whitespace-nowrap"
           >
             <span className="i-tabler-brand-github text-[16px]" />
             Code
+          </a>
+        ) : null}
+
+        {p.ctaYoutube ? (
+          <a
+            href={p.ctaYoutube}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="inline-flex items-center gap-2 rounded-xl border border-red-400/30 bg-red-500/15 px-3 py-1.5 text-sm text-red-100 hover:shadow-[0_8px_24px_rgba(239,68,68,0.35)] transition whitespace-nowrap"
+            aria-label={`${p.title} on YouTube`}
+          >
+            <span className="i-tabler-brand-youtube text-[16px]" />
+            YouTube
           </a>
         ) : null}
 
@@ -107,11 +122,24 @@ export function ProjectCard({ p, className }: { p: Project; className?: string }
           <a
             href={p.ctaCase}
             target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-3 py-1.5 text-sm text-emerald-100 hover:shadow-[0_8px_24px_rgba(34,197,94,0.35)] transition"
+            rel="noreferrer noopener"
+            className="inline-flex items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-3 py-1.5 text-sm text-emerald-100 hover:shadow-[0_8px_24px_rgba(34,197,94,0.35)] transition whitespace-nowrap"
           >
             <span className="i-tabler-file-description text-[16px]" />
             Case Study
+          </a>
+        ) : null}
+
+        {p.ctaDocs ? (
+          <a
+            href={p.ctaDocs}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-3 py-1.5 text-sm text-white/85 hover:bg-white/10 transition whitespace-nowrap"
+            aria-label={`${p.title} Docs`}
+          >
+            <span className="i-tabler-file-text text-[16px]" />
+            Docs
           </a>
         ) : null}
       </div>

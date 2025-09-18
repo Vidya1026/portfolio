@@ -3,6 +3,8 @@
 import { FadeIn } from "@/components/motion/FadeIn";
 import { ProjectCard } from "./project-card";
 // The shine/tilt effects rely on CSS keyframes in globals and will be added next
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
 
 /**
  * NOTE:
@@ -25,52 +27,61 @@ type ProjectItem = {
   ctaLive?: string;
   ctaCode?: string;
   ctaCase?: string;
+  ctaYoutube?: string;
+  ctaDocs?: string;
+  coverImage?: string;
 };
 
-const sample: ProjectItem[] = [
-  {
-    title: "AI-enabled Chess Robot",
-    year: "2023",
-    blurb:
-      "SCARA arm plays chess against humans; Python plans moves via Stockfish and controls motors through Arduino.",
-    tags: ["Python", "Arduino", "Stockfish", "OpenCV"],
-    keyImpacts: [
-      "Autonomous chess moves via Stockfish + motor control.",
-      "Camera-based board detection; synchronized actuation."
-    ],
-    ctaCode: "https://github.com/your/repo",
-    ctaCase: "#",
-  },
-  {
-    title: "Real-time Analytics Dashboard",
-    year: "2024",
-    blurb:
-      "High-performance dashboard for monitoring business metrics with real-time updates and interactive visualizations.",
-    tags: ["Next.js", "Spring Boot", "Redis", "WebSockets", "Recharts"],
-    keyImpacts: [
-      "Sub‑100ms live update latency with WebSockets.",
-      "Reduced page load time by ~60% through smart caching."
-    ],
-    ctaLive: "#",
-    ctaCode: "#",
-    ctaCase: "#",
-  },
-  {
-    title: "Agriculture Price Prediction",
-    year: "2023",
-    blurb:
-      "End-to-end price prediction with preprocessing, model selection (R²), and a Streamlit UI for exploration.",
-    tags: ["Python", "Pandas", "Scikit-learn", "Streamlit"],
-    keyImpacts: [
-      "Reproducible ML pipeline; interactive explorer via Streamlit.",
-      "Practical forecasting demo with clear model evaluation."
-    ],
-    ctaCode: "#",
-    ctaCase: "#",
-  },
-];
-
 export default function ProjectsSection() {
+  const [items, setItems] = useState<ProjectItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('projects')
+          .select(
+            'title, year, blurb, tags, highlights, github_url, demo_url, youtube_url, docs_url, cover_image, featured, sort_order, published, created_at'
+          )
+          .eq('published', true)
+          .order('featured', { ascending: false })
+          .order('sort_order', { ascending: true })
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+
+        const parsed: ProjectItem[] = (data ?? []).map((d: any) => ({
+          title: d.title ?? '',
+          year: d.year ?? '',
+          blurb: d.blurb ?? '',
+          tags: Array.isArray(d.tags)
+            ? d.tags
+            : typeof d.tags === 'string' && d.tags.trim()
+            ? d.tags.split(',').map((t: string) => t.trim()).filter(Boolean)
+            : [],
+          keyImpacts: Array.isArray(d.highlights)
+            ? d.highlights
+            : typeof d.highlights === 'string' && d.highlights.trim()
+            ? d.highlights.split('|').map((s: string) => s.trim()).filter(Boolean)
+            : undefined,
+          ctaLive: d.demo_url || '',
+          ctaCode: d.github_url || '',
+          ctaCase: '',
+          ctaYoutube: d.youtube_url || '',
+          ctaDocs: d.docs_url || '',
+          coverImage: d.cover_image || '',
+        }));
+
+        setItems(parsed);
+      } catch (e) {
+        console.warn('[projects-section] supabase fetch failed', e);
+        setItems([]);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
   return (
     <section className="relative z-10 isolate py-18 md:py-24">
       <div className="container">
@@ -94,28 +105,19 @@ export default function ProjectsSection() {
 
         {/* Card grid */}
         <div className="relative z-10 isolate mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 place-items-stretch">
-          {sample.map((p, i) => (
+          {loading && (
+            <div className="col-span-full text-center text-sm text-white/60">Loading projects…</div>
+          )}
+          {!loading && items.length === 0 && (
+            <div className="col-span-full text-center text-sm text-white/60">No projects yet.</div>
+          )}
+          {!loading && items.map((p, i) => (
             <FadeIn key={p.title} delay={i * 0.08}>
-              {/* Glow + wiggle wrapper without touching ProjectCard internals */}
-              <div
-                className="
-                  group relative z-0
-                  [--halo:theme(colors.violet.500/18)]
-                  [--ring:conic-gradient(from_180deg,theme(colors.violet.500/.4),theme(colors.fuchsia.500/.35),theme(colors.cyan.400/.35),theme(colors.violet.500/.4))]
-                  hover:animate-[wiggle_800ms_ease-in-out]
-                  transition-transform duration-300 will-change-transform
-                  hover:scale-[1.02] hover:-translate-y-1
-                "
-              >
-                {/* animated gradient ring on hover */}
-                {/* soft halo */}
+              <div className="group relative z-0 [--halo:theme(colors.violet.500/18)] [--ring:conic-gradient(from_180deg,theme(colors.violet.500/.4),theme(colors.fuchsia.500/.35),theme(colors.cyan.400/.35),theme(colors.violet.500/.4))] hover:animate-[wiggle_800ms_ease-in-out] transition-transform duration-300 will-change-transform hover:scale-[1.02] hover:-translate-y-1">
                 <div className="pointer-events-none absolute -inset-1.5 rounded-2xl bg-[radial-gradient(30%_40%_at_50%_0%,var(--halo),transparent_70%)] opacity-0 group-hover:opacity-80 transition-opacity duration-300 -z-10" />
-                {/* card host (enforce minimum height so cards feel tall) */}
                 <div className="relative z-10 isolate min-h-[460px] flex rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-[0.5px] overflow-hidden project-card">
-                  {/* subtle sheen sweep (CSS-only, defined in globals.css) */}
                   <div aria-hidden className="card-sheen" />
-                  {/* Pass enriched project object. ProjectCard can pick up any extra fields later. */}
-                  <ProjectCard p={p as any} />
+                  <ProjectCard p={p} />
                 </div>
               </div>
             </FadeIn>
