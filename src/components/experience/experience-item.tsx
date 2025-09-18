@@ -33,10 +33,18 @@ export function ExperienceItem({ org, role, start, end, bullets, logoUrl, last }
         {/* sheen (CSS-only; styles in globals.css) */}
         <div aria-hidden className="card-sheen" />
         <div className="flex items-center gap-3">
-          {logoUrl && (
+          {logoUrl ? (
             <div className="exp-logo relative">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logoUrl} alt={`${org} logo`} className="size-8 md:size-9 rounded-md object-contain ring-1 ring-white/10" />
+              <img
+                src={logoUrl}
+                alt={`${org} logo`}
+                className="h-10 w-10 md:h-12 md:w-12 rounded-md object-contain ring-1 ring-white/20 bg-white p-1"
+              />
+            </div>
+          ) : (
+            <div className="exp-logo relative flex items-center justify-center h-10 w-10 md:h-12 md:w-12 rounded-full bg-white ring-1 ring-white/20 text-gray-800 font-bold text-xl md:text-2xl select-none">
+              {org?.charAt(0) || "?"}
             </div>
           )}
           <div className="flex-1">

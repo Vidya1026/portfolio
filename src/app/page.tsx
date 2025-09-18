@@ -371,7 +371,7 @@ export default function HomePage() {
               ref={tileRef}
               onMouseMove={onTileMove}
               onMouseLeave={onTileLeave}
-              className="relative w-[300px] h-[320px] md:w-[360px] md:h-[390px] rounded-2xl overflow-hidden ring-1 ring-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.45)] transform-gpu will-change-transform transition-transform duration-300"
+              className="group relative w-[240px] h-[260px] md:w-[300px] md:h-[330px] rounded-2xl overflow-hidden ring-1 ring-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.45)] transform-gpu will-change-transform transition-transform duration-300"
               style={{ transform: 'perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translate3d(var(--tx, 0px), var(--ty, 0px), 0)' }}
             >
               <span aria-hidden className="pointer-events-none absolute -inset-6 rounded-[24px] bg-gradient-to-r from-violet-500/10 via-transparent to-emerald-500/10 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -380,16 +380,33 @@ export default function HomePage() {
               <span className="absolute top-8 left-1/3 size-2 rounded-full bg-emerald-300/90 animate-pulse" />
               <span className="absolute top-1/3 right-12 size-1.5 rounded-full bg-violet-300/80 animate-ping" />
               <span className="absolute bottom-8 left-10 size-1.5 rounded-full bg-sky-300/80 animate-ping" />
-              {/* center avatar */}
-              <div className="absolute inset-0 grid place-items-center">
-                <div className="size-24 md:size-28 rounded-full bg-white/10 backdrop-blur-md ring-1 ring-white/20 grid place-items-center overflow-hidden">
-                  {profileUrl ? (
-                    <Image src={profileUrl} alt="Profile" fill className="object-cover" />
-                  ) : (
+              {/* profile image fills the whole tile */}
+              {profileUrl ? (
+                <Image
+                  src={profileUrl}
+                  alt="Profile"
+                  fill
+                  className="absolute inset-0 object-cover"
+                  sizes="(min-width: 768px) 360px, 300px"
+                  priority
+                />
+              ) : (
+                <div className="absolute inset-0 grid place-items-center">
+                  <div className="size-24 md:size-28 rounded-full bg-white/10 backdrop-blur-md ring-1 ring-white/20 grid place-items-center overflow-hidden">
                     <span className="text-3xl md:text-4xl font-bold text-white/90">B</span>
-                  )}
+                  </div>
                 </div>
-              </div>
+              )}
+              {/* glossy sweep on hover */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/35 to-transparent opacity-40 group-hover:opacity-80 auto-shine"
+              />
+              {/* soft inner glow on hover */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 ring-1 ring-white/0 group-hover:ring-white/15 rounded-2xl transition duration-500"
+              />
             </div>
             <div className="mt-3 md:mt-4">
               <div className="mt-4 relative">
@@ -570,6 +587,16 @@ export default function HomePage() {
         @keyframes metric-pop {
           0% { transform: translateY(6px) scale(.98); opacity: 0; }
           100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        /* Auto shine sweep across the profile tile */
+        .auto-shine{
+          transform: translateX(-120%);
+          animation: shine-sweep 3.2s ease-in-out infinite;
+        }
+        @keyframes shine-sweep{
+          0%   { transform: translateX(-120%); }
+          60%  { transform: translateX(120%); }
+          100% { transform: translateX(120%); }
         }
       `}</style>
     </>

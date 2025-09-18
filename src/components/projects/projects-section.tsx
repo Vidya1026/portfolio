@@ -6,6 +6,19 @@ import { ProjectCard } from "./project-card";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 
+const IMG_BUCKET = process.env.NEXT_PUBLIC_SUPABASE_IMAGE_BUCKET ?? "cert-images";
+
+/** Normalize a cover image value to a public URL the browser can load */
+function toPublicUrl(input?: string | null): string {
+  if (!input) return "";
+  // If a full URL (public or signed), just return it
+  if (/^https?:\/\//i.test(input)) return input;
+  // Otherwise treat it as a storage path and turn it into a public URL
+  const cleanPath = input.replace(/^\/+/, "");
+  const { data } = supabase.storage.from(IMG_BUCKET).getPublicUrl(cleanPath);
+  return data?.publicUrl ?? "";
+}
+
 /**
  * NOTE:
  * - I enriched the sample data so each project can show a "Key Impact" list
@@ -69,7 +82,7 @@ export default function ProjectsSection() {
           ctaCase: '',
           ctaYoutube: d.youtube_url || '',
           ctaDocs: d.docs_url || '',
-          coverImage: d.cover_image || '',
+          coverImage: toPublicUrl(d.cover_image),
         }));
 
         setItems(parsed);

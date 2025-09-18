@@ -1,12 +1,14 @@
 'use client';
 
+const IMAGE_BUCKET = process.env.NEXT_PUBLIC_SUPABASE_IMAGE_BUCKET || 'images';
+
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 
-function storagePathFromPublicUrl(url?: string | null) {
+function storagePathFromPublicUrl(url?: string | null, bucket: string = IMAGE_BUCKET) {
   if (!url) return null;
   try {
-    const marker = '/storage/v1/object/public/images/';
+    const marker = `/storage/v1/object/public/${bucket}/`;
     const idx = url.indexOf(marker);
     if (idx === -1) return null;
     return url.slice(idx + marker.length);
@@ -151,9 +153,9 @@ export default function ProjectsPanel() {
     if (!ok) return;
 
     try {
-      const path = storagePathFromPublicUrl(row?.cover_image);
+      const path = storagePathFromPublicUrl(row?.cover_image, IMAGE_BUCKET);
       if (path) {
-        await supabase.storage.from('images').remove([path]);
+        await supabase.storage.from(IMAGE_BUCKET).remove([path]);
       }
     } catch {
       // ignore cleanup errors
@@ -184,6 +186,7 @@ export default function ProjectsPanel() {
   }
 
   async function handleCoverUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const inputEl = e.currentTarget;
     const file = e.target.files?.[0];
     if (!file) return;
     try {
@@ -195,14 +198,15 @@ export default function ProjectsPanel() {
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)+/g, '');
-      const path = `projects/${base}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '')}`;
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '');
+      const path = `projects/${base}-${Date.now()}-${safeName}`;
 
       const { error: upErr } = await supabase.storage
-        .from('images')
+        .from(IMAGE_BUCKET)
         .upload(path, file, { upsert: false, cacheControl: '3600' });
       if (upErr) throw upErr;
 
-      const { data } = supabase.storage.from('images').getPublicUrl(path);
+      const { data } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(path);
       const publicUrl = data.publicUrl;
 
       setForm(f => ({ ...f, cover_image: publicUrl }));
@@ -212,7 +216,7 @@ export default function ProjectsPanel() {
     } finally {
       setUploadingCover(false);
       // reset the input so the same file can be selected again if needed
-      e.currentTarget.value = '';
+      if (inputEl) inputEl.value = '';
     }
   }
 
@@ -300,7 +304,7 @@ export default function ProjectsPanel() {
               onChange={handleCoverUpload}
               className="hidden"
             />
-            <span className="text-xs text-white/50">or paste a URL above</span>
+            <span className="text-xs text-white/50">or paste a URL above (uploads to <code>{IMAGE_BUCKET}/projects</code>)</span>
           </div>
         </div>
 
@@ -348,6 +352,7 @@ export default function ProjectsPanel() {
             </button>
           )}
           {msg && <span className="text-sm text-white/70">{msg}</span>}
+          <span className="ml-2 text-xs text-white/40">Using bucket: {IMAGE_BUCKET}</span>
         </div>
       </form>
 

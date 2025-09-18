@@ -3,10 +3,13 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 
+const IMAGE_BUCKET = process.env.NEXT_PUBLIC_IMAGE_BUCKET || 'cert-images';
+const LOGO_DIR = 'experience'; // folder inside the bucket for experience logos
+
 function storagePathFromPublicUrl(url?: string | null) {
   if (!url) return null;
   try {
-    const marker = '/storage/v1/object/public/images/';
+    const marker = `/storage/v1/object/public/${IMAGE_BUCKET}/`;
     const idx = url.indexOf(marker);
     if (idx === -1) return null;
     return url.slice(idx + marker.length);
@@ -28,10 +31,17 @@ type ExperienceRow = {
 };
 
 function toPipe(a?: string[]) {
-  return (a ?? []).join(' | ');
+  // For editing, show one bullet per line
+  return (a ?? []).join('\n');
 }
 function pipeToArray(s: string) {
   return s.split('|').map(x => x.trim()).filter(Boolean);
+}
+function parseBullets(input: string) {
+  return input
+    .split(/\r?\n|\|/g)
+    .map((x) => x.trim())
+    .filter(Boolean);
 }
 
 export default function ExperiencePanel() {
@@ -40,6 +50,8 @@ export default function ExperiencePanel() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [bulletsText, setBulletsText] = useState("");
 
   const [form, setForm] = useState<ExperienceRow>({
     org: '',
@@ -51,6 +63,8 @@ export default function ExperiencePanel() {
     sort_order: 999,
     published: true,
   });
+
+  useEffect(() => { setBulletsText(""); }, []);
 
   async function load() {
     setLoading(true);
@@ -74,7 +88,7 @@ export default function ExperiencePanel() {
     try {
       const payload: ExperienceRow = {
         ...form,
-        bullets: form.bullets ?? [],
+        bullets: parseBullets(bulletsText) ?? [],
         sort_order: Number(form.sort_order ?? 999),
         published: !!form.published,
       };
@@ -92,6 +106,7 @@ export default function ExperiencePanel() {
         sort_order: 999,
         published: true,
       });
+      setBulletsText('');
       await load();
     } catch (err: any) {
       setMsg(err.message || 'Save failed');
@@ -109,7 +124,7 @@ export default function ExperiencePanel() {
     try {
       const path = storagePathFromPublicUrl(row?.logo_url);
       if (path) {
-        await supabase.storage.from('images').remove([path]);
+        await supabase.storage.from(IMAGE_BUCKET).remove([path]);
       }
     } catch {
       // ignore cleanup errors
@@ -131,11 +146,16 @@ export default function ExperiencePanel() {
       sort_order: r.sort_order ?? 999,
       published: r.published !== false,
     });
+    setBulletsText(toPipe(r.bullets));
   }
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+    // Capture the input element first; React may pool the event
+    const inputEl = e.currentTarget;
+    const file = inputEl.files?.[0];
     if (!file) return;
+    setPreviewUrl(URL.createObjectURL(file));
+
     try {
       setUploadingLogo(true);
       setMsg(null);
@@ -144,22 +164,26 @@ export default function ExperiencePanel() {
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)+/g, '');
-      const path = `logos/${base}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '')}`;
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '');
+      const path = `${LOGO_DIR}/${base}-${Date.now()}-${safeName}`;
 
       const { error: upErr } = await supabase.storage
-        .from('images')
+        .from(IMAGE_BUCKET)
         .upload(path, file, { upsert: false, cacheControl: '3600' });
       if (upErr) throw upErr;
 
-      const { data } = supabase.storage.from('images').getPublicUrl(path);
+      const { data } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(path);
       const publicUrl = data.publicUrl;
       setForm(f => ({ ...f, logo_url: publicUrl }));
+      setPreviewUrl(publicUrl);
       setMsg('Logo uploaded ✔');
     } catch (err: any) {
       setMsg(err.message || 'Upload failed');
     } finally {
       setUploadingLogo(false);
-      e.currentTarget.value = '';
+      if (previewUrl && previewUrl.startsWith('blob:')) { URL.revokeObjectURL(previewUrl); }
+      // Reset the file input safely
+      if (inputEl) inputEl.value = '';
     }
   }
 
@@ -211,13 +235,14 @@ export default function ExperiencePanel() {
         </div>
 
         <label className="flex flex-col gap-1">
-          <span className="text-xs text-white/70">Bullets (pipe | separated)</span>
-          <input
-            className="rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-white"
-            value={toPipe(form.bullets)}
-            onChange={e => setForm(f => ({ ...f, bullets: pipeToArray(e.target.value) }))}
-            placeholder="Did X | Built Y | Improved Z"
+          <span className="text-xs text-white/70">Bullets (one per line or use "|")</span>
+          <textarea
+            className="rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-white min-h-[120px] resize-y"
+            value={bulletsText}
+            onChange={e => setBulletsText(e.target.value)}
+            placeholder={"Implemented feature X\nReduced latency by 60%\nLed 3-person team"}
           />
+          <span className="text-[11px] text-white/40">{parseBullets(bulletsText).length} bullet(s)</span>
         </label>
 
         <label className="flex flex-col gap-1">
@@ -244,17 +269,31 @@ export default function ExperiencePanel() {
             onChange={handleLogoUpload}
             className="hidden"
           />
-          <span className="text-xs text-white/50">or paste a URL above</span>
+          <span className="text-xs text-white/50">or paste a URL above (uploads to <code className="text-white/70">{IMAGE_BUCKET}/{LOGO_DIR}</code>)</span>
         </div>
-        {form.logo_url ? (
+        {(previewUrl || form.logo_url) ? (
           <div className="mt-1 flex items-center gap-3">
-            <img src={form.logo_url} alt="logo preview" className="h-14 w-auto rounded border border-white/10 object-contain bg-white/5 p-1" />
+            <img
+              src={previewUrl || (form.logo_url as string)}
+              alt="logo preview"
+              className="h-16 w-16 rounded border border-white/10 object-contain bg-white/5 p-1"
+            />
+            {form.logo_url ? (
+              <a
+                href={form.logo_url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs rounded-lg border border-white/15 px-2 py-1 text-white/80 hover:bg-white/10"
+              >
+                Open image
+              </a>
+            ) : null}
             <button
               type="button"
-              onClick={() => setForm(f => ({ ...f, logo_url: '' }))}
+              onClick={() => { setForm(f => ({ ...f, logo_url: '' })); setPreviewUrl(null); }}
               className="text-xs rounded-lg border border-white/15 px-2 py-1 text-white/80 hover:bg-white/10"
             >
-              Remove logo
+              Remove image
             </button>
           </div>
         ) : null}
@@ -290,13 +329,14 @@ export default function ExperiencePanel() {
           {form.id && (
             <button
               type="button"
-              onClick={() => setForm({ id: undefined, org: '', role: '', start: '', end: '', bullets: [], logo_url: '', sort_order: 999, published: true })}
+              onClick={() => { setForm({ id: undefined, org: '', role: '', start: '', end: '', bullets: [], logo_url: '', sort_order: 999, published: true }); setBulletsText(''); }}
               className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-white hover:bg-white/15 transition"
             >
               Cancel Edit
             </button>
           )}
           {msg && <span className="text-sm text-white/70">{msg}</span>}
+          <div className="text-xs text-white/40">Using bucket: {IMAGE_BUCKET}</div>
         </div>
       </form>
 

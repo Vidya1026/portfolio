@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 
+const IMAGE_BUCKET = process.env.NEXT_PUBLIC_SUPABASE_IMAGE_BUCKET ?? 'cert-images';
+
 type SiteSettings = {
   id?: string;
   hero_title?: string;
@@ -112,27 +114,44 @@ export default function SiteSettingsForm() {
   async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Keep a reference to the input so we can reset it after async awaits
+    const inputEl = e.currentTarget;
+
     try {
       setUploadingAvatar(true);
       setMsg(null);
-      const base = 'avatar';
+
+      // Always store avatars in a dedicated folder within the bucket
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '');
-      const path = `avatars/${base}-${Date.now()}-${safeName}`;
+      const path = `avatars/avatar-${Date.now()}-${safeName}`;
 
+      // Upload to Supabase Storage
       const { error: upErr } = await supabase.storage
-        .from('images')
+        .from(IMAGE_BUCKET)
         .upload(path, file, { upsert: false, cacheControl: '3600' });
-      if (upErr) throw upErr;
 
-      const { data } = supabase.storage.from('images').getPublicUrl(path);
+      if (upErr) {
+        // Improve the inline error message for common bucket issues
+        const msg =
+          /Not Found|does not exist/i.test(upErr.message)
+            ? `Bucket "${IMAGE_BUCKET}" not found. Create it in Supabase Storage (Public) or set NEXT_PUBLIC_SUPABASE_IMAGE_BUCKET.`
+            : upErr.message;
+        throw new Error(msg);
+      }
+
+      // Get the public URL for immediate preview/use on the site
+      const { data } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(path);
       const publicUrl = data.publicUrl;
-      setForm(f => ({ ...f, avatar_url: publicUrl }));
+
+      setForm((f) => ({ ...f, avatar_url: publicUrl }));
       setMsg('Avatar uploaded ✔');
     } catch (err: any) {
-      setMsg(err.message || 'Upload failed');
+      console.error('[avatar upload]', err);
+      setMsg(err?.message || 'Upload failed');
     } finally {
       setUploadingAvatar(false);
-      e.currentTarget.value = '';
+      if (inputEl) inputEl.value = '';
     }
   }
 
@@ -250,13 +269,23 @@ export default function SiteSettingsForm() {
               className="hidden"
             />
             {form.avatar_url && (
-              <button
-                type="button"
-                onClick={() => setForm(f => ({ ...f, avatar_url: '' }))}
-                className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 py-1.5 text-sm text-white hover:bg-white/15"
-              >
-                Remove
-              </button>
+              <>
+                <a
+                  href={form.avatar_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 py-1.5 text-sm text-white hover:bg-white/15"
+                >
+                  Open image
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, avatar_url: '' }))}
+                  className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 py-1.5 text-sm text-white hover:bg-white/15"
+                >
+                  Remove
+                </button>
+              </>
             )}
           </div>
         </label>

@@ -49,7 +49,7 @@ export default function CertificationsSection() {
     <section className="relative z-10 isolate py-16 md:py-24 section-anchor" id="certifications">
       <div className="container">
         <FadeIn>
-          <div className="mx-auto max-w-3xl text-center">
+          <div className="mx-auto max-w-3xl flex flex-col items-center text-center">
             <h2 className="text-4xl md:text-5xl font-extrabold leading-tight">
               <span className="gradient-text">Certifications</span>
             </h2>

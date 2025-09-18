@@ -16,6 +16,7 @@ type Project = {
   year: string;
   blurb: string;
   tags: string[];
+  coverImage?: string; // optional hero image at top of card
   keyImpacts?: string[];
   ctaLive?: string;
   ctaCode?: string;
@@ -30,13 +31,27 @@ export function ProjectCard({ p, className }: { p: Project; className?: string }
       className={cn(
         "project-card group relative z-10 isolate overflow-hidden",                // enable group-hover & clip local shine
         "glass rounded-2xl ring-1 ring-white/10 bg-white/[0.05] backdrop-blur-md",
-        "min-h-[460px] md:min-h-[520px] p-6 md:p-7 pr-7 md:pr-8 pb-6 md:pb-7 flex flex-col justify-start",
+        "min-h-[420px] md:min-h-[480px] p-6 md:p-7 pr-7 md:pr-8 pb-6 md:pb-7 flex flex-col justify-start",
         "shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_14px_44px_rgba(0,0,0,0.45)]",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/40",
         "transition-all duration-300",
         className
       )}
     >
+      {/* cover image (optional) */}
+      {p.coverImage ? (
+        <div className="-mt-1 mb-4 rounded-xl overflow-hidden bg-black/20 aspect-[16/9] ring-1 ring-white/10">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={p.coverImage}
+            alt={`${p.title} cover`}
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover"
+          />
+        </div>
+      ) : null}
+
       {/* header */}
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-lg md:text-xl font-semibold leading-tight tracking-tight">
@@ -86,7 +101,7 @@ export function ProjectCard({ p, className }: { p: Project; className?: string }
             href={p.ctaLive}
             target="_blank"
             rel="noreferrer noopener"
-            className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-sm text-white/90 hover:bg-white/10 hover:shadow-[0_8px_24px_rgba(124,58,237,0.25)] transition whitespace-nowrap"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-sm text-white/90 hover:bg-white/10 hover:shadow-[0_8px_24px_rgba(124,58,237,0.25)] transition min-w-0"
           >
             <span className="i-tabler-external-link text-[16px]" />
             Live
@@ -98,7 +113,7 @@ export function ProjectCard({ p, className }: { p: Project; className?: string }
             href={p.ctaCode}
             target="_blank"
             rel="noreferrer noopener"
-            className="inline-flex items-center gap-2 rounded-xl border border-violet-400/30 bg-violet-500/15 px-3 py-1.5 text-sm text-violet-100 hover:shadow-[0_8px_24px_rgba(124,58,237,0.35)] transition whitespace-nowrap"
+            className="inline-flex items-center gap-2 rounded-xl border border-violet-400/30 bg-violet-500/15 px-3 py-1.5 text-sm text-violet-100 hover:shadow-[0_8px_24px_rgba(124,58,237,0.35)] transition min-w-0"
           >
             <span className="i-tabler-brand-github text-[16px]" />
             Code
@@ -110,7 +125,7 @@ export function ProjectCard({ p, className }: { p: Project; className?: string }
             href={p.ctaYoutube}
             target="_blank"
             rel="noreferrer noopener"
-            className="inline-flex items-center gap-2 rounded-xl border border-red-400/30 bg-red-500/15 px-3 py-1.5 text-sm text-red-100 hover:shadow-[0_8px_24px_rgba(239,68,68,0.35)] transition whitespace-nowrap"
+            className="inline-flex items-center gap-2 rounded-xl border border-red-400/30 bg-red-500/15 px-3 py-1.5 text-sm text-red-100 hover:shadow-[0_8px_24px_rgba(239,68,68,0.35)] transition min-w-0"
             aria-label={`${p.title} on YouTube`}
           >
             <span className="i-tabler-brand-youtube text-[16px]" />
@@ -123,7 +138,7 @@ export function ProjectCard({ p, className }: { p: Project; className?: string }
             href={p.ctaCase}
             target="_blank"
             rel="noreferrer noopener"
-            className="inline-flex items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-3 py-1.5 text-sm text-emerald-100 hover:shadow-[0_8px_24px_rgba(34,197,94,0.35)] transition whitespace-nowrap"
+            className="inline-flex items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-3 py-1.5 text-sm text-emerald-100 hover:shadow-[0_8px_24px_rgba(34,197,94,0.35)] transition min-w-0"
           >
             <span className="i-tabler-file-description text-[16px]" />
             Case Study
@@ -135,7 +150,7 @@ export function ProjectCard({ p, className }: { p: Project; className?: string }
             href={p.ctaDocs}
             target="_blank"
             rel="noreferrer noopener"
-            className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-3 py-1.5 text-sm text-white/85 hover:bg-white/10 transition whitespace-nowrap"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-3 py-1.5 text-sm text-white/85 hover:bg-white/10 transition min-w-0"
             aria-label={`${p.title} Docs`}
           >
             <span className="i-tabler-file-text text-[16px]" />
