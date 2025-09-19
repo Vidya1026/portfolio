@@ -16,9 +16,12 @@ type Project = {
   title: string;
   year: string;
   blurb: string;
-  tags: string[];
+  tags: string[] | string;
   coverImage?: string; // optional hero image at top of card
-  keyImpacts?: string[];
+  cover_image?: string;
+  image?: string;
+  keyImpacts?: string[] | string;
+  highlights?: string[] | string;
   ctaLive?: string;
   ctaCode?: string;
   ctaCase?: string;
@@ -51,8 +54,9 @@ export default function ProjectCard({ p, className }: { p: Project; className?: 
   const title = p.title ?? "";
   const year = p.year ?? "";
   const blurb = p.blurb ?? "";
-  const tagsArr = toArray(p.tags as unknown);
-  const impactsArr = toArray(p.keyImpacts as unknown);
+  const tagsArr = toArray((p as any).tags ?? p.tags);
+  const impactsArr = toArray((p as any).keyImpacts ?? (p as any).highlights ?? p.keyImpacts);
+  const cover = p.coverImage ?? (p as any).cover_image ?? (p as any).image;
 
   // Normalize CTAs so buttons always render even if the data uses legacy column names
   const live = p.ctaLive ?? p.demo_url ?? p.live_url ?? undefined;
@@ -74,7 +78,7 @@ export default function ProjectCard({ p, className }: { p: Project; className?: 
       )}
     >
       {/* cover image (optional) */}
-      {p.coverImage ? (
+      {cover ? (
         <a
           href={p.ctaLive ?? p.demo_url ?? p.live_url ?? p.ctaCode ?? p.github_url ?? '#'}
           target={p.ctaLive || p.demo_url || p.live_url || p.ctaCode || p.github_url ? '_blank' : undefined}
@@ -83,7 +87,7 @@ export default function ProjectCard({ p, className }: { p: Project; className?: 
           aria-label={`${title} preview`}
         >
           <Image
-            src={p.coverImage}
+            src={cover}
             alt={`${title} cover`}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

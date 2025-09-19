@@ -1,9 +1,55 @@
 "use client";
 
+const DEBUG_PROJECTS = false; // show real ProjectCard
+
 import { FadeIn } from "@/components/motion/FadeIn";
-import ProjectCard from "./project-card";
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase/client";
+import React from "react";
+
+// Load supabase client only in the browser, and only when effect runs.
+const loadSupabase = async () => {
+  try {
+    const mod = await import("@/lib/supabase/client");
+    // some builds export default, some named
+    return (mod as any).supabase ?? (mod as any).default ?? mod;
+  } catch {
+    return undefined as unknown as { from: any; storage: any } | undefined;
+  }
+};
+
+const ProjectCard = dynamic(
+  () =>
+    import("./project-card").then((m: any) => {
+      const Comp = m?.ProjectCard ?? m?.default;
+      return Comp ?? (() => null);
+    }),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex-1 flex items-center justify-center text-xs text-white/60">Loading…</div>
+    ),
+  }
+);
+
+class CardBoundary extends React.Component<{ p: ProjectItem; children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: { p: ProjectItem; children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(err: unknown) {
+    console.error("[projects-section] ProjectCard crashed:", err);
+  }
+  render() {
+    if (this.state.hasError) {
+      return <FallbackCard p={this.props.p} />;
+    }
+    return this.props.children as React.ReactElement;
+  }
+}
 
 const DEFAULT_IMG_BUCKET = process.env.NEXT_PUBLIC_SUPABASE_IMAGE_BUCKET ?? "project-images";
 
@@ -63,7 +109,7 @@ const firstString = (row: Record<string, unknown>, keys: string[]): string => {
 };
 
 /** Convert a storage path or direct URL to a public URL */
-function toPublicUrl(input?: string | null): string {
+function toPublicUrl(input?: string | null, client?: { storage: { from: (b: string) => { getPublicUrl: (p: string) => { data?: { publicUrl?: string } } } } }): string {
   // Guard: nothing provided
   if (!input) return "";
   // Already a full URL
@@ -88,15 +134,22 @@ function toPublicUrl(input?: string | null): string {
   if (!path) return "";
 
   try {
-    // Some runtimes can hot‑reload before the client exists – guard it.
-    const client: typeof supabase | undefined = (supabase as unknown as typeof supabase) ?? undefined;
     if (!client || !client.storage) return "";
-
     const { data } = client.storage.from(bucket).getPublicUrl(path);
     return data?.publicUrl ?? "";
   } catch {
     return "";
   }
+}
+
+function FallbackCard({ p }: { p: ProjectItem }) {
+  return (
+    <div className="p-5 flex-1">
+      <div className="text-lg font-semibold mb-2">{p.title || "Untitled Project"}</div>
+      <div className="text-xs text-white/60 mb-3">{p.year}</div>
+      <p className="text-sm text-white/70 line-clamp-3">{p.blurb}</p>
+    </div>
+  );
 }
 
 export default function ProjectsSection() {
@@ -105,10 +158,24 @@ export default function ProjectsSection() {
   const [loading, setLoading] = useState(true);
   const [errMsg, setErrMsg] = useState<string | null>(null);
 
+  // TEMP debug banner
+  const DebugBanner = ({ count }: { count: number }) =>
+    DEBUG_PROJECTS ? (
+      <div className="fixed top-0 left-0 z-[9999] m-2 rounded bg-fuchsia-600/20 px-2 py-1 text-xs text-fuchsia-200">
+        projects-section: items={count} err={String(errMsg ?? "")}
+      </div>
+    ) : null;
+
   useEffect(() => {
     (async () => {
+      const client = await loadSupabase();
+      if (!client) {
+        setErrMsg("Supabase client not available");
+        setLoading(false);
+        return;
+      }
       try {
-        const { data, error } = await supabase
+        const { data, error } = await client
           .from("projects")
           .select("*")
           .eq("published", true)
@@ -146,7 +213,7 @@ export default function ProjectsSection() {
             ctaDocs: firstString(row, ["docs_url", "documentation_url", "doc"]) || undefined,
             ctaYoutube: firstString(row, ["youtube_url", "video_url", "video"]) || undefined,
             ctaCase: firstString(row, ["case_url", "case_study_url", "article_url", "blog_url"]) || undefined,
-            coverImage: toPublicUrl(coverRaw),
+            coverImage: toPublicUrl(coverRaw, client),
             featured: asBool(row["featured"]),
             sortOrder: toNumber(row["sort_order"], 999),
           };
@@ -161,6 +228,7 @@ export default function ProjectsSection() {
             return (a.sortOrder ?? 999) - (b.sortOrder ?? 999);
           })
         );
+        console.info("[projects-section] ready", { items: parsed.length });
       } catch (e) {
         console.error("[projects-section] supabase fetch failed", e);
         setItems([]);
@@ -174,6 +242,7 @@ export default function ProjectsSection() {
   return (
     <section id="projects" className="relative z-20 isolate py-18 md:py-24">
       <div className="container">
+        <DebugBanner count={items.length} />
         <FadeIn>
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="text-4xl md:text-5xl font-extrabold leading-tight">
@@ -188,6 +257,7 @@ export default function ProjectsSection() {
         </FadeIn>
 
         <div className="relative z-10 isolate mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 place-items-stretch min-h-[2rem]">
+          {/* Grid */}
           {loading && (
             <div className="col-span-full text-center text-sm text-white/60">Loading projects…</div>
           )}
@@ -208,12 +278,14 @@ export default function ProjectsSection() {
           )}
           {!loading &&
             items.map((p, i) => (
-              <FadeIn key={`${p.title}-${p.year}-${i}`} delay={i * 0.08}>
+              <FadeIn key={`${p.title || "untitled"}-${p.year || "n/a"}-${i}`} delay={i * 0.08}>
                 <div className="group relative z-0 [--halo:theme(colors.violet.500/18)] [--ring:conic-gradient(from_180deg,theme(colors.violet.500/.4),theme(colors.fuchsia.500/.35),theme(colors.cyan.400/.35),theme(colors.violet.500/.4))] hover:animate-[wiggle_800ms_ease-in-out] transition-transform duration-300 will-change-transform hover:scale-[1.02] hover:-translate-y-1">
                   <div className="pointer-events-none absolute -inset-1.5 rounded-2xl bg-[radial-gradient(30%_40%_at_50%_0%,var(--halo),transparent_70%)] opacity-0 group-hover:opacity-80 transition-opacity duration-300 -z-10" />
                   <div className="relative z-10 isolate min-h-[460px] flex rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-[0.5px] overflow-hidden project-card">
                     <div aria-hidden className="card-sheen" />
-                    <ProjectCard p={p} />
+                    <CardBoundary p={p}>
+                      <ProjectCard p={p} />
+                    </CardBoundary>
                   </div>
                 </div>
               </FadeIn>
