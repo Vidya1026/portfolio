@@ -49,7 +49,7 @@ export function SiteNav() {
   }, []);
 
   useEffect(()=>{
-    const ids = ["projects","experience","certifications"];
+    const ids = ["about","education","experience","skills","certifications","publications","contact"];
     const obs = new IntersectionObserver((entries)=>{
       entries.forEach((en)=>{
         if(en.isIntersecting){
@@ -116,29 +116,45 @@ export function SiteNav() {
             }
           }}
         >
-          {/* Brand: gradient avatar with initial */}
-          <Link href="/#home" aria-label="Home" className="relative inline-flex items-center">
+          {/* Brand: animated gradient avatar with spinning ring */}
+          <Link href="/#home" aria-label="Home" className="relative inline-flex items-center group">
+            {/* spinning conic ring (border only via mask) */}
+            <span
+              aria-hidden
+              className="absolute -inset-1 rounded-full opacity-70 blur-[1px]
+                         [mask:radial-gradient(farthest-side,transparent_calc(100%-2px),#000_calc(100%-2px))]
+                         bg-[conic-gradient(at_50%_50%,#8b5cf6_0%,#22d3ee_25%,#a78bfa_50%,#f472b6_75%,#8b5cf6_100%)]
+                         animate-[spin_8s_linear_infinite] transition-opacity group-hover:opacity-90"/>
+
+            {/* inner badge */}
             <span
               className={cn(
-                "relative flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-bold",
-                "bg-gradient-to-br from-violet-500 via-fuchsia-500 to-cyan-400 text-white",
-                "shadow-[0_0_0_2px_rgba(255,255,255,0.06),0_0_24px_rgba(168,85,247,0.35)]",
-                "ring-1 ring-white/10",
-                "transition-transform hover:scale-105"
+                "relative flex h-9 w-9 items-center justify-center rounded-full text-[13px] font-extrabold",
+                "text-white",
+                "bg-gradient-to-br from-fuchsia-500 via-violet-500 to-cyan-400",
+                "ring-1 ring-white/20 shadow-[0_0_0_2px_rgba(255,255,255,0.06),0_0_28px_rgba(168,85,247,0.4)]",
+                "transition-transform duration-300 group-hover:scale-110"
               )}
             >
-              B
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-violet-400/30 shadow-[0_0_32px_rgba(168,85,247,0.45)] opacity-60 transition-opacity duration-300 hover:opacity-100"
-              />
+              {/* glossy highlight */}
+              <span aria-hidden className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(70%_60%_at_30%_30%,rgba(255,255,255,0.35),transparent_60%)] opacity-80" />
+              <span className="relative drop-shadow-[0_1px_0_rgba(0,0,0,0.35)]">B</span>
+
+              {/* small status ping for a lively feel */}
+              <span aria-hidden className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.9)]" />
+              <span aria-hidden className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-emerald-300 animate-ping" />
             </span>
           </Link>
 
           {/* Right side */}
           <div className="flex items-center gap-1">
-            <a href="/#projects" className={activeFX("projects")}>
-              <span className="relative z-10">Projects</span>
+            <a href="/#about" className={activeFX("about")}>
+              <span className="relative z-10">About</span>
+              <span className="pointer-events-none absolute inset-0 rounded-md opacity-0 blur-md transition group-hover:opacity-20 bg-gradient-to-r from-violet-500/0 via-violet-500/25 to-cyan-400/0" />
+              <span className="pointer-events-none absolute left-2 right-2 -bottom-0.5 h-px origin-left scale-x-0 bg-gradient-to-r from-transparent via-fuchsia-400/90 to-transparent transition-transform duration-300 group-hover:scale-x-100" />
+            </a>
+            <a href="/#education" className={activeFX("education")}>
+              <span className="relative z-10">Education</span>
               <span className="pointer-events-none absolute inset-0 rounded-md opacity-0 blur-md transition group-hover:opacity-20 bg-gradient-to-r from-violet-500/0 via-violet-500/25 to-cyan-400/0" />
               <span className="pointer-events-none absolute left-2 right-2 -bottom-0.5 h-px origin-left scale-x-0 bg-gradient-to-r from-transparent via-fuchsia-400/90 to-transparent transition-transform duration-300 group-hover:scale-x-100" />
             </a>
@@ -147,8 +163,23 @@ export function SiteNav() {
               <span className="pointer-events-none absolute inset-0 rounded-md opacity-0 blur-md transition group-hover:opacity-20 bg-gradient-to-r from-violet-500/0 via-violet-500/25 to-cyan-400/0" />
               <span className="pointer-events-none absolute left-2 right-2 -bottom-0.5 h-px origin-left scale-x-0 bg-gradient-to-r from-transparent via-fuchsia-400/90 to-transparent transition-transform duration-300 group-hover:scale-x-100" />
             </a>
+            <a href="/#skills" className={activeFX("skills")}>
+              <span className="relative z-10">Skills</span>
+              <span className="pointer-events-none absolute inset-0 rounded-md opacity-0 blur-md transition group-hover:opacity-20 bg-gradient-to-r from-violet-500/0 via-violet-500/25 to-cyan-400/0" />
+              <span className="pointer-events-none absolute left-2 right-2 -bottom-0.5 h-px origin-left scale-x-0 bg-gradient-to-r from-transparent via-fuchsia-400/90 to-transparent transition-transform duration-300 group-hover:scale-x-100" />
+            </a>
             <a href="/#certifications" className={activeFX("certifications")}>
               <span className="relative z-10">Certifications</span>
+              <span className="pointer-events-none absolute inset-0 rounded-md opacity-0 blur-md transition group-hover:opacity-20 bg-gradient-to-r from-violet-500/0 via-violet-500/25 to-cyan-400/0" />
+              <span className="pointer-events-none absolute left-2 right-2 -bottom-0.5 h-px origin-left scale-x-0 bg-gradient-to-r from-transparent via-fuchsia-400/90 to-transparent transition-transform duration-300 group-hover:scale-x-100" />
+            </a>
+            <a href="/#publications" className={activeFX("publications")}>
+              <span className="relative z-10">Publications</span>
+              <span className="pointer-events-none absolute inset-0 rounded-md opacity-0 blur-md transition group-hover:opacity-20 bg-gradient-to-r from-violet-500/0 via-violet-500/25 to-cyan-400/0" />
+              <span className="pointer-events-none absolute left-2 right-2 -bottom-0.5 h-px origin-left scale-x-0 bg-gradient-to-r from-transparent via-fuchsia-400/90 to-transparent transition-transform duration-300 group-hover:scale-x-100" />
+            </a>
+            <a href="/#contact" className={activeFX("contact")}>
+              <span className="relative z-10">Contact</span>
               <span className="pointer-events-none absolute inset-0 rounded-md opacity-0 blur-md transition group-hover:opacity-20 bg-gradient-to-r from-violet-500/0 via-violet-500/25 to-cyan-400/0" />
               <span className="pointer-events-none absolute left-2 right-2 -bottom-0.5 h-px origin-left scale-x-0 bg-gradient-to-r from-transparent via-fuchsia-400/90 to-transparent transition-transform duration-300 group-hover:scale-x-100" />
             </a>

@@ -6,13 +6,16 @@ import SiteSettingsForm from './SiteSettingsForm';
 import ProjectsPanel from './ProjectsPanel';
 import CertsPanel from './CertsPanel';
 import ExperiencePanel from './ExperiencePanel';
+import PublicationsPanel from './PublicationsPanel';
+import SkillsPanel from './skills-panel';
+import EducationPanel from './EducationPanel';
 
 type Session = Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'];
 
 export default function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'site' | 'projects' | 'certs' | 'experience'>('site');
+  const [activeTab, setActiveTab] = useState<'site' | 'projects' | 'certs' | 'education' | 'experience' | 'publications' | 'skills'>('site');
 
   // email/password login form state
   const [email, setEmail] = useState('');
@@ -118,7 +121,7 @@ export default function AdminPage() {
 
       {/* simple tabs */}
       <div className="mb-6 flex flex-wrap gap-2">
-        {(['site', 'projects', 'certs', 'experience'] as const).map((tab) => (
+        {(['site', 'projects', 'certs', 'education', 'experience', 'publications', 'skills'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -135,7 +138,13 @@ export default function AdminPage() {
               ? 'Projects'
               : tab === 'certs'
               ? 'Certifications'
-              : 'Experience'}
+              : tab === 'education'
+              ? 'Education'
+              : tab === 'experience'
+              ? 'Experience'
+              : tab === 'publications'
+              ? 'Publications'
+              : 'Skills'}
           </button>
         ))}
       </div>
@@ -150,7 +159,10 @@ export default function AdminPage() {
         )}
         {activeTab === 'projects' && <ProjectsPanel />}
         {activeTab === 'certs' && <CertsPanel />}
+        {activeTab === 'education' && <EducationPanel />}
         {activeTab === 'experience' && <ExperiencePanel />}
+        {activeTab === 'publications' && <PublicationsPanel />}
+        {activeTab === 'skills' && <SkillsPanel />}
       </div>
     </main>
   );

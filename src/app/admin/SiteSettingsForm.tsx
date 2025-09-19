@@ -3,19 +3,41 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 
+
 const IMAGE_BUCKET = process.env.NEXT_PUBLIC_SUPABASE_IMAGE_BUCKET ?? 'cert-images';
+const MAX_CARDS = 3;
+
+type FeatureCard = {
+  id: string;            // local id for React lists
+  title: string;
+  body: string;
+  icon?: string;         // optional emoji / small label
+};
+
+type SocialLink = {
+  id: string;
+  label: string;
+  url: string;
+  icon?: string; // tabler icon name or emoji
+};
 
 type SiteSettings = {
   id?: string;
   hero_title?: string;
   hero_tagline?: string;
+  about_me?: string;          // NEW: stored as text in DB
+  achievements?: string;      // NEW: stored as text (one per line or pipe-separated)
   metrics_years?: string;
   metrics_projects?: string;
   metrics_certs?: string;
   skills?: string[];          // stored as text[] in DB
   resume_url?: string;
   contact_email?: string;
+  contact_phone?: string;
+  contact_location?: string;
+  social_links?: SocialLink[];
   avatar_url?: string;
+  feature_cards?: FeatureCard[];  // NEW: stored as jsonb in DB
 };
 
 function toCSV(a?: string[]) { return (a ?? []).join(', '); }
@@ -35,14 +57,86 @@ export default function SiteSettingsForm() {
   const [form, setForm] = useState<SiteSettings>({
     hero_title: '',
     hero_tagline: '',
+    about_me: '',
+    achievements: '',
     metrics_years: '',
     metrics_projects: '',
     metrics_certs: '',
     skills: [],
     resume_url: '',
     contact_email: '',
+    contact_phone: '',
+    contact_location: '',
+    social_links: [],
     avatar_url: '',
+    feature_cards: [],
   });
+
+  function addFeatureCard() {
+    setForm(f => {
+      const current = f.feature_cards ?? [];
+      if (current.length >= MAX_CARDS) return f;
+      return {
+        ...f,
+        feature_cards: [
+          ...current,
+          { id: crypto.randomUUID?.() ?? String(Date.now()), title: '', body: '', icon: '✨' },
+        ],
+      };
+    });
+  }
+  function updateFeatureCard(idx: number, patch: Partial<FeatureCard>) {
+    setForm(f => {
+      const next = [...(f.feature_cards ?? [])];
+      next[idx] = { ...next[idx], ...patch };
+      return { ...f, feature_cards: next };
+    });
+  }
+  function removeFeatureCard(idx: number) {
+    setForm(f => {
+      const next = [...(f.feature_cards ?? [])];
+      next.splice(idx, 1);
+      return { ...f, feature_cards: next };
+    });
+  }
+
+  function addSocialLink() {
+    setForm(f => ({
+      ...f,
+      social_links: [ ...(f.social_links ?? []), { id: crypto.randomUUID?.() ?? String(Date.now()), label: '', url: '', icon: '🔗' } ]
+    }));
+  }
+  function updateSocialLink(idx: number, patch: Partial<SocialLink>) {
+    setForm(f => {
+      const next = [...(f.social_links ?? [])];
+      next[idx] = { ...next[idx], ...patch };
+      return { ...f, social_links: next };
+    });
+  }
+  function removeSocialLink(idx: number) {
+    setForm(f => {
+      const next = [...(f.social_links ?? [])];
+      next.splice(idx, 1);
+      return { ...f, social_links: next };
+    });
+  }
+
+  function moveFeatureCardUp(idx: number) {
+    setForm(f => {
+      const next = [...(f.feature_cards ?? [])];
+      if (idx <= 0) return f;
+      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+      return { ...f, feature_cards: next };
+    });
+  }
+  function moveFeatureCardDown(idx: number) {
+    setForm(f => {
+      const next = [...(f.feature_cards ?? [])];
+      if (idx >= next.length - 1) return f;
+      [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]];
+      return { ...f, feature_cards: next };
+    });
+  }
 
   useEffect(() => {
     let mounted = true;
@@ -51,6 +145,7 @@ export default function SiteSettingsForm() {
       const { data, error } = await supabase
         .from('site_settings')
         .select('*')
+        .order('id', { ascending: false })
         .limit(1)
         .maybeSingle();
 
@@ -59,17 +154,39 @@ export default function SiteSettingsForm() {
       }
       if (mounted) {
         if (data) {
+          // Normalize feature_cards (may be json string from older rows)
+          let featureCards: unknown = data.feature_cards ?? [];
+          if (typeof featureCards === 'string') {
+            try {
+              featureCards = JSON.parse(featureCards);
+            } catch {
+              featureCards = [];
+            }
+          }
+          if (!Array.isArray(featureCards)) featureCards = [];
+          // Normalize social_links (may be json string from older rows)
+          let socialLinks: unknown = (data as any).social_links ?? [];
+          if (typeof socialLinks === 'string') {
+            try { socialLinks = JSON.parse(socialLinks as string); } catch { socialLinks = []; }
+          }
+          if (!Array.isArray(socialLinks)) socialLinks = [];
           setForm({
             id: data.id,
             hero_title: data.hero_title ?? '',
             hero_tagline: data.hero_tagline ?? '',
+            about_me: data.about_me ?? '',
+            achievements: data.achievements ?? '',
             metrics_years: data.metrics_years ?? '',
             metrics_projects: data.metrics_projects ?? '',
             metrics_certs: data.metrics_certs ?? '',
             skills: Array.isArray(data.skills) ? data.skills : [],
             resume_url: data.resume_url ?? '',
             contact_email: data.contact_email ?? '',
+            contact_phone: (data as any).contact_phone ?? '',
+            contact_location: (data as any).contact_location ?? '',
+            social_links: socialLinks as SocialLink[],
             avatar_url: data.avatar_url ?? '',
+            feature_cards: featureCards as FeatureCard[],
           });
         }
         setLoading(false);
@@ -83,17 +200,40 @@ export default function SiteSettingsForm() {
     setSaving(true);
     setMsg(null);
     try {
+      const cleanCards = (form.feature_cards ?? [])
+        .map(c => ({
+          id: c.id,
+          title: (c.title ?? '').trim(),
+          body: (c.body ?? '').trim(),
+          icon: (c.icon ?? '').trim() || '✨',
+        }))
+        .filter(c => c.title && c.body)
+        .slice(0, MAX_CARDS);
+      const cleanLinks = (form.social_links ?? [])
+        .map(l => ({
+          id: l.id,
+          label: (l.label ?? '').trim(),
+          url: (l.url ?? '').trim(),
+          icon: (l.icon ?? '').trim() || '🔗',
+        }))
+        .filter(l => l.label && l.url);
       const payload = {
         id: form.id, // if undefined, upsert will insert
         hero_title: form.hero_title,
         hero_tagline: form.hero_tagline,
+        about_me: form.about_me ?? '',
+        achievements: form.achievements ?? '',
         metrics_years: form.metrics_years,
         metrics_projects: form.metrics_projects,
         metrics_certs: form.metrics_certs,
         skills: form.skills ?? [],
         resume_url: form.resume_url,
         contact_email: form.contact_email,
+        contact_phone: form.contact_phone,
+        contact_location: form.contact_location,
+        social_links: cleanLinks,
         avatar_url: form.avatar_url,
+        feature_cards: cleanCards,
         updated_at: new Date().toISOString(),
       };
 
@@ -182,6 +322,129 @@ export default function SiteSettingsForm() {
         </label>
       </div>
 
+      {/* About Me and Key Achievements */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label className="flex flex-col gap-2">
+          <span className="text-sm text-white/70">About Me (short paragraph)</span>
+          <textarea
+            className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-white outline-none focus:border-violet-400/50 min-h-[120px] resize-y"
+            value={form.about_me ?? ''}
+            onChange={e => setForm(f => ({ ...f, about_me: e.target.value }))}
+            placeholder="Software Engineer with ~3 years' experience in full‑stack, cloud, and applied AI/ML. I build scalable web apps, automate delivery, and design reliable systems…"
+          />
+        </label>
+
+        <label className="flex flex-col gap-2">
+          <span className="text-sm text-white/70">Key Achievements (one per line or use “|”)</span>
+          <textarea
+            className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-white outline-none focus:border-violet-400/50 min-h-[120px] resize-y"
+            value={form.achievements ?? ''}
+            onChange={e => setForm(f => ({ ...f, achievements: e.target.value }))}
+            placeholder={
+`Architected and delivered full‑stack apps with Spring Boot, React, SQL
+Implemented CI/CD with Docker/K8s + GitHub Actions to speed up releases
+Designed RAG assistants with FastAPI/LangChain to improve retrieval accuracy
+Enhanced observability with Grafana/Prometheus/Azure Monitor` }
+          />
+          <span className="text-[11px] text-white/40">
+            {(form.achievements ?? '').split(/\r?\n|\|/).filter(Boolean).length} item(s)
+          </span>
+        </label>
+      </div>
+
+      {/* Feature Cards (editable list) */}
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-4 md:p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-white/80 font-medium">
+            Feature Cards <span className="text-white/50">({(form.feature_cards ?? []).length}/{MAX_CARDS})</span>
+          </h3>
+          <button
+            type="button"
+            onClick={addFeatureCard}
+            disabled={(form.feature_cards ?? []).length >= MAX_CARDS}
+            className="rounded-lg border border-violet-400/30 bg-violet-500/20 px-3 py-1.5 text-sm text-white hover:bg-violet-500/30 transition disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            + Add card
+          </button>
+        </div>
+
+        {(form.feature_cards ?? []).length === 0 && (
+          <p className="text-sm text-white/50">No cards yet. Click “Add card” to create up to three cards for the hero section.</p>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {(form.feature_cards ?? []).map((c, idx) => (
+            <div key={c.id} className="rounded-xl border border-white/10 bg-black/20 p-3 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <label className="flex-1 flex items-center gap-2">
+                  <span className="text-xs text-white/60">Icon</span>
+                  <input
+                    className="w-16 rounded bg-white/5 border border-white/10 px-2 py-1 text-white outline-none focus:border-violet-400/50 text-center"
+                    value={c.icon ?? ''}
+                    onChange={e => updateFeatureCard(idx, { icon: e.target.value })}
+                    placeholder="✨"
+                    maxLength={4}
+                  />
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => moveFeatureCardUp(idx)}
+                    className="rounded-md border border-white/15 bg-white/10 px-2.5 py-1 text-xs text-white hover:bg-white/15"
+                    aria-label="Move up"
+                    disabled={idx === 0}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveFeatureCardDown(idx)}
+                    className="rounded-md border border-white/15 bg-white/10 px-2.5 py-1 text-xs text-white hover:bg-white/15"
+                    aria-label="Move down"
+                    disabled={idx === (form.feature_cards?.length ?? 1) - 1}
+                  >
+                    ↓
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeFeatureCard(idx)}
+                    className="rounded-md border border-red-400/30 bg-red-500/10 px-2.5 py-1 text-xs text-red-200 hover:bg-red-500/20"
+                    aria-label="Remove card"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-white/60">Title</span>
+                <input
+                  className="rounded bg-white/5 border border-white/10 px-2.5 py-1.5 text-white outline-none focus:border-violet-400/50"
+                  value={c.title}
+                  onChange={e => updateFeatureCard(idx, { title: e.target.value })}
+                  placeholder="GenAI & RAG"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-white/60">Body</span>
+                <textarea
+                  className="min-h-[92px] rounded bg-white/5 border border-white/10 px-2.5 py-1.5 text-white outline-none focus:border-violet-400/50 resize-y"
+                  value={c.body}
+                  onChange={e => updateFeatureCard(idx, { body: e.target.value })}
+                  placeholder="Grounded answers with RAG over your data. Retrieval‑Augmented Generation that boosts search accuracy."
+                />
+              </label>
+            </div>
+          ))}
+        </div>
+
+        {/* Small hint */}
+        <p className="text-[11px] text-white/40">
+          Tip: Up to {MAX_CARDS} cards. Keep titles short (2–3 words). Body can be 2–3 lines. These render under your hero as the feature blocks.
+        </p>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <label className="flex flex-col gap-2">
           <span className="text-sm text-white/70">Years (metric)</span>
@@ -241,6 +504,91 @@ export default function SiteSettingsForm() {
             placeholder="you@example.com"
           />
         </label>
+      </div>
+
+      {/* Contact (phone, location) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label className="flex flex-col gap-2">
+          <span className="text-sm text-white/70">Contact Phone</span>
+          <input
+            className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-white outline-none focus:border-violet-400/50"
+            value={form.contact_phone ?? ''}
+            onChange={e => setForm(f => ({ ...f, contact_phone: e.target.value }))}
+            placeholder="+1 (404) 729 2160"
+          />
+        </label>
+        <label className="flex flex-col gap-2">
+          <span className="text-sm text-white/70">Location</span>
+          <input
+            className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-white outline-none focus:border-violet-400/50"
+            value={form.contact_location ?? ''}
+            onChange={e => setForm(f => ({ ...f, contact_location: e.target.value }))}
+            placeholder="Atlanta, Georgia"
+          />
+        </label>
+      </div>
+
+      {/* Social Links */}
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-4 md:p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-white/80 font-medium">Social Links</h3>
+          <button
+            type="button"
+            onClick={addSocialLink}
+            className="rounded-lg border border-violet-400/30 bg-violet-500/20 px-3 py-1.5 text-sm text-white hover:bg-violet-500/30 transition"
+          >
+            + Add link
+          </button>
+        </div>
+        {(form.social_links ?? []).length === 0 && (
+          <p className="text-sm text-white/50">No social links yet. Add LinkedIn, GitHub, Email, etc.</p>
+        )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {(form.social_links ?? []).map((l, idx) => (
+            <div key={l.id} className="rounded-xl border border-white/10 bg-black/20 p-3 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <label className="flex items-center gap-2">
+                  <span className="text-xs text-white/60">Icon</span>
+                  <input
+                    className="w-16 rounded bg-white/5 border border-white/10 px-2 py-1 text-white outline-none focus:border-violet-400/50 text-center"
+                    value={l.icon ?? ''}
+                    onChange={e => updateSocialLink(idx, { icon: e.target.value })}
+                    placeholder="🔗"
+                    maxLength={8}
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => removeSocialLink(idx)}
+                  className="rounded-md border border-red-400/30 bg-red-500/10 px-2.5 py-1 text-xs text-red-200 hover:bg-red-500/20"
+                >
+                  Remove
+                </button>
+              </div>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-white/60">Label</span>
+                <input
+                  className="rounded bg-white/5 border border-white/10 px-2.5 py-1.5 text-white outline-none focus:border-violet-400/50"
+                  value={l.label}
+                  onChange={e => updateSocialLink(idx, { label: e.target.value })}
+                  placeholder="LinkedIn"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-white/60">URL</span>
+                <input
+                  className="rounded bg-white/5 border border-white/10 px-2.5 py-1.5 text-white outline-none focus:border-violet-400/50"
+                  value={l.url}
+                  onChange={e => updateSocialLink(idx, { url: e.target.value })}
+                  placeholder="https://linkedin.com/in/…"
+                />
+              </label>
+            </div>
+          ))}
+        </div>
+        <p className="text-[11px] text-white/40">Tip: Use emojis or Tabler icon names (e.g., tabler-brand-linkedin) in the icon field.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -4,7 +4,12 @@ import { Aurora } from "@/components/branding/Aurora";
 import { FadeIn } from "@/components/motion/FadeIn";
 import ProjectsSection from "@/components/projects/projects-section";
 import ExperienceSection from "@/components/experience/experience-section";
+import EducationSection from "@/components/education/education-section";
 import CertificationsSection from "@/components/certifications/certifications-section";
+import AboutSection from "@/components/about/about-section";
+import PublicationsSection from "@/components/publications/publications-section";
+import SkillsSection from "@/components/skills/skills-section";
+import ContactSection from "@/components/contact/contact-section";
 import Image from "next/image";
 
 import { useEffect, useRef, useState } from "react";
@@ -103,12 +108,76 @@ const SvgApps = (
   </svg>
 );
 
+
 const SvgCertificate = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-[14px] md:size-[16px]">
     <circle cx="12" cy="9" r="4"/>
     <path d="M8.5 13.5 7 22l5-3 5 3-1.5-8.5"/>
   </svg>
 );
+
+
+function TypingHeading({ text, className = "" }: { text: string; className?: string }) {
+  const [i, setI] = useState(0);
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (done) return;
+    const step = () => {
+      setI((v) => {
+        if (v >= text.length) {
+          setDone(true);
+          return v;
+        }
+        return v + 1;
+      });
+    };
+    const t = setInterval(step, 45);
+    return () => clearInterval(t);
+  }, [text, done]);
+
+  return (
+    <h1 className={`inline-block text-4xl md:text-6xl font-extrabold tracking-tight gradient-text leading-[1.15] pb-1 ${className}`}>
+      {text.slice(0, i)}
+      <span className={`type-caret ${done ? "opacity-0 md:opacity-100" : ""}`}>|</span>
+    </h1>
+  );
+}
+
+function HeroTitle({
+  text,
+  className = "",
+}: {
+  text: string;
+  className?: string;
+}) {
+  const words = text.split(/\s+/).filter(Boolean);
+  return (
+    <div className={`hero-title ${className}`}>
+      {/* Accessible full title for screen readers */}
+      <h1 className="sr-only">{text}</h1>
+
+      {/* Visual: word-by-word reveal */}
+      <div
+        aria-hidden
+        className="hero-title-words inline-flex flex-wrap items-baseline justify-center gap-x-3 gap-y-2"
+      >
+        {words.map((w, i) => (
+          <span
+            key={`${w}-${i}`}
+            className="reveal-word gradient-text text-4xl md:text-6xl font-extrabold tracking-tight leading-[1.15] pb-1"
+            style={{ ["--rd" as any]: `${i * 90}ms` }}
+          >
+            {w}
+          </span>
+        ))}
+      </div>
+
+      {/* Subtle animated underline sheen */}
+      <span aria-hidden className="hero-title-sheen" />
+    </div>
+  );
+}
 
 function MetricsBar() {
   return (
@@ -142,13 +211,19 @@ export default function HomePage() {
   const [settings, setSettings] = useState({
     hero_title: "",
     hero_tagline: "",
+    about_me: "",
+    achievements: "",
     metrics_years: "",
     metrics_projects: "",
     metrics_certs: "",
     skills: [] as string[],
     resume_url: "",
     contact_email: "",
+    contact_phone: "",
+    contact_location: "",
+    social_links: [] as { label: string; url: string; icon?: string }[],
     avatar_url: "",
+    feature_cards: [] as { title: string; body: string; icon?: string }[],
   });
   const lastY = useRef(0);
   const tileRef = useRef<HTMLDivElement | null>(null);
@@ -190,20 +265,54 @@ export default function HomePage() {
       const { data, error } = await supabase
         .from('site_settings')
         .select('*')
+        // make sure we pick the most recent settings row deterministically
+        .order('id', { ascending: false })
         .limit(1)
         .maybeSingle();
       if (!error && data) {
+        // normalize feature_cards in case it's saved as JSON text
+        let featureCards: unknown = data.feature_cards ?? [];
+        if (typeof featureCards === 'string') {
+          try {
+            featureCards = JSON.parse(featureCards);
+          } catch {
+            featureCards = [];
+          }
+        }
+        if (!Array.isArray(featureCards)) featureCards = [];
+
+        // normalize social_links in case it's saved as JSON text
+        let socialLinks: unknown = (data as any).social_links ?? [];
+        if (typeof socialLinks === 'string') {
+          try {
+            socialLinks = JSON.parse(socialLinks as string);
+          } catch {
+            socialLinks = [];
+          }
+        }
+        if (!Array.isArray(socialLinks)) socialLinks = [];
+
         setSettings({
           hero_title: data.hero_title ?? "",
           hero_tagline: data.hero_tagline ?? "",
+          about_me: data.about_me ?? "",
+          achievements: data.achievements ?? "",
           metrics_years: data.metrics_years ?? "",
           metrics_projects: data.metrics_projects ?? "",
           metrics_certs: data.metrics_certs ?? "",
           skills: Array.isArray(data.skills) ? data.skills : [],
           resume_url: data.resume_url ?? "",
           contact_email: data.contact_email ?? "",
+          contact_phone: (data as any).contact_phone ?? "",
+          contact_location: (data as any).contact_location ?? "",
+          social_links: socialLinks as { label: string; url: string; icon?: string }[],
           avatar_url: data.avatar_url ?? "",
+          feature_cards: featureCards as { title: string; body: string; icon?: string }[],
         });
+      } else {
+        if (error) {
+          console.warn('[site_settings] fetch error:', error);
+        }
       }
     })();
   }, []);
@@ -236,9 +345,40 @@ export default function HomePage() {
       ]
   );
 
+  const featureCards: { title: string; body: string; icon?: string }[] =
+    (settings.feature_cards && settings.feature_cards.length > 0)
+      ? settings.feature_cards
+      : [
+          {
+            title: "GenAI & RAG",
+            body: "Grounded answers with your data. Retrieval‑Augmented Generation that boosts search accuracy.",
+            icon: "🧠",
+          },
+          {
+            title: "Full‑Stack",
+            body: "React/Next frontends with resilient Java/Spring Boot services and real‑time UX.",
+            icon: "🚀",
+          },
+          {
+            title: "Cloud & CI/CD",
+            body: "Dockerized deployments and automated pipelines on AWS & GCP with Terraform.",
+            icon: "⚡",
+          },
+        ];
+
+  // Fallback content for About if site_settings fields are empty
+  const DEFAULT_ABOUT =
+    "Full‑stack engineer with ~3 years of experience building clean React/Next.js frontends and resilient Java/Spring services. I care about performance, DX, and production reliability—shipping features with tests, CI/CD, and tidy UX. Recently focused on GenAI/RAG and cloud‑native pipelines on AWS & GCP.";
+
+  const DEFAULT_ACHIEVEMENTS =
+    "• Reduced API latency ~35% with query tuning & caching\n" +
+    "• Shipped CI/CD with Docker + Terraform on AWS/GCP\n" +
+    "• Built RAG pipelines (LangChain, vector DB) for grounded answers\n" +
+    "• Designed secure RBAC and audit‑friendly API boundaries";
+
   return (
     <>
-      <main id="home" className="relative min-h-[78vh] grid grid-cols-1 md:grid-cols-2 place-items-center md:items-start overflow-hidden bg-background section-anchor pt-10 md:pt-20">
+      <main id="home" className="relative min-h-[78vh] grid grid-cols-1 md:grid-cols-2 place-items-center md:items-start overflow-visible bg-background section-anchor pt-10 md:pt-20">
         <Aurora />
         <div className="w-full">
           <section className="text-center space-y-4 pt-8 pb-16 mx-auto max-w-3xl">
@@ -249,9 +389,7 @@ export default function HomePage() {
                   Open to work
                 </span>
               </div>
-              <h1 className="inline-block text-4xl md:text-6xl font-extrabold tracking-tight gradient-text leading-[1.15] pb-1">
-                {settings.hero_title || "Bhargava — Full-Stack • AI/RAG"}
-              </h1>
+              <HeroTitle text={settings.hero_title || "Bhargava — Full-Stack • AI/RAG"} />
             </FadeIn>
             <FadeIn delay={0.1}>
               <p className="text-muted-foreground max-w-xl mx-auto">
@@ -291,49 +429,32 @@ export default function HomePage() {
             <FadeIn delay={0.25}>
               <div className="mx-auto mt-10 w-full max-w-5xl px-4 md:px-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6">
-                  {/* GenAI & RAG */}
-                  <div className="group relative overflow-hidden rounded-2xl bg-white/[0.06] ring-1 ring-white/10 backdrop-blur supports-[backdrop-filter]:bg-white/[0.06] p-7 md:p-8 min-h-[220px] md:min-h-[260px] flex items-start transition-all duration-300 hover:-translate-y-1 hover:ring-white/20 hover:shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
-                    <div className="absolute left-0 md:left-2 top-1/2 -translate-y-1/2 w-40 md:w-56 h-40 md:h-56 rounded-full bg-violet-500/10 blur-2xl group-hover:bg-violet-500/20 transition-colors" />
-                    <div className="relative z-10 flex gap-4">
-                      <span className="inline-grid place-items-center size-12 rounded-xl bg-violet-500/30 ring-1 ring-white/10 text-xl">🧠</span>
-                      <div className="text-left max-w-[240px] md:max-w-[300px] lg:max-w-[320px]">
-                        <div className="text-lg md:text-xl font-semibold text-white/90">GenAI & RAG</div>
-                        <p className="mt-1 text-sm md:text-base text-white/70 leading-snug md:leading-normal">Grounded answers with your data. Retrieval‑Augmented Generation that boosts search accuracy.</p>
+                  {featureCards
+                    .filter(c => c.title?.trim() && c.body?.trim())
+                    .slice(0, 3)
+                    .map((c, idx) => (
+                    <div
+                      key={idx}
+                      className="group relative overflow-hidden rounded-2xl bg-white/[0.06] ring-1 ring-white/10 backdrop-blur supports-[backdrop-filter]:bg-white/[0.06] p-7 md:p-8 min-h-[220px] md:min-h-[260px] flex items-start transition-all duration-300 hover:-translate-y-1 hover:ring-white/20 hover:shadow-[0_24px_80px_rgba(0,0,0,0.45)]"
+                    >
+                      <div className="absolute left-0 md:left-2 top-1/2 -translate-y-1/2 w-40 md:w-56 h-40 md:h-56 rounded-full bg-violet-500/10 blur-2xl group-hover:bg-violet-500/20 transition-colors" />
+                      <div className="relative z-10 flex gap-4">
+                        <span className="inline-grid place-items-center size-12 rounded-xl bg-violet-500/30 ring-1 ring-white/10 text-xl">
+                          {c.icon || "✨"}
+                        </span>
+                        <div className="text-left max-w-[240px] md:max-w-[300px] lg:max-w-[320px]">
+                          <div className="text-lg md:text-xl font-semibold text-white/90">{c.title}</div>
+                          <p className="mt-1 text-sm md:text-base text-white/70 leading-snug md:leading-normal">{c.body}</p>
+                        </div>
                       </div>
+                      <span className="pointer-events-none absolute inset-0 translate-x-[-60%] bg-gradient-to-r from-transparent via-white/15 to-transparent opacity-0 group-hover:opacity-100 group-hover:translate-x-[120%] transition duration-700" />
                     </div>
-                    <span className="pointer-events-none absolute inset-0 translate-x-[-60%] bg-gradient-to-r from-transparent via-white/15 to-transparent opacity-0 group-hover:opacity-100 group-hover:translate-x-[120%] transition duration-700" />
-                  </div>
-
-                  {/* Full‑Stack */}
-                  <div className="group relative overflow-hidden rounded-2xl bg-white/[0.06] ring-1 ring-white/10 backdrop-blur supports-[backdrop-filter]:bg-white/[0.06] p-7 md:p-8 min-h-[220px] md:min-h-[260px] flex items-start transition-all duration-300 hover:-translate-y-1 hover:ring-white/20 hover:shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
-                    <div className="absolute left-0 md:left-2 top-1/2 -translate-y-1/2 w-40 md:w-56 h-40 md:h-56 rounded-full bg-fuchsia-500/10 blur-2xl group-hover:bg-fuchsia-500/20 transition-colors" />
-                    <div className="relative z-10 flex gap-4">
-                      <span className="inline-grid place-items-center size-12 rounded-xl bg-violet-500/30 ring-1 ring-white/10 text-xl">🚀</span>
-                      <div className="text-left max-w-[240px] md:max-w-[300px] lg:max-w-[320px]">
-                        <div className="text-lg md:text-xl font-semibold text-white/90">Full‑Stack</div>
-                        <p className="mt-1 text-sm md:text-base text-white/70 leading-snug md:leading-normal">React/Next frontends with resilient Java/Spring Boot services and real‑time UX.</p>
-                      </div>
-                    </div>
-                    <span className="pointer-events-none absolute inset-0 translate-x-[-60%] bg-gradient-to-r from-transparent via-white/15 to-transparent opacity-0 group-hover:opacity-100 group-hover:translate-x-[120%] transition duration-700" />
-                  </div>
-
-                  {/* Cloud & CI/CD */}
-                  <div className="group relative overflow-hidden rounded-2xl bg-white/[0.06] ring-1 ring-white/10 backdrop-blur supports-[backdrop-filter]:bg-white/[0.06] p-7 md:p-8 min-h-[220px] md:min-h-[260px] flex items-start transition-all duration-300 hover:-translate-y-1 hover:ring-white/20 hover:shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
-                    <div className="absolute left-0 md:left-2 top-1/2 -translate-y-1/2 w-40 md:w-56 h-40 md:h-56 rounded-full bg-emerald-500/10 blur-2xl group-hover:bg-emerald-500/20 transition-colors" />
-                    <div className="relative z-10 flex gap-4">
-                      <span className="inline-grid place-items-center size-12 rounded-xl bg-violet-500/30 ring-1 ring-white/10 text-xl">⚡</span>
-                      <div className="text-left max-w-[240px] md:max-w-[300px] lg:max-w-[320px]">
-                        <div className="text-lg md:text-xl font-semibold text-white/90">Cloud & CI/CD</div>
-                        <p className="mt-1 text-sm md:text-base text-white/70 leading-snug md:leading-normal">Dockerized deployments and automated pipelines on AWS & GCP with Terraform.</p>
-                      </div>
-                    </div>
-                    <span className="pointer-events-none absolute inset-0 translate-x-[-60%] bg-gradient-to-r from-transparent via-white/15 to-transparent opacity-0 group-hover:opacity-100 group-hover:translate-x-[120%] transition duration-700" />
-                  </div>
+                  ))}
                 </div>
               </div>
             </FadeIn>
             {/* Futuristic tech ribbon to softly fill the gap */}
-            <div className="relative mt-28 md:mt-32 max-w-3xl mx-auto mb-6">
+            <div className="relative mt-16 md:mt-20 max-w-3xl mx-auto mb-2">
               {/* ambient glow */}
               <div className="pointer-events-none absolute inset-0 -z-10">
                 <div className="absolute left-0 top-0 size-40 rounded-full bg-violet-500/15 blur-3xl" />
@@ -431,6 +552,31 @@ export default function HomePage() {
         </div>
       </main>
 
+      {/* About Me */}
+      <section id="about" className="section-anchor pt-14 md:pt-20">
+        <div className="mx-auto w-full max-w-6xl section-gutter px-4 md:px-6">
+          <FadeIn>
+            <div className="rounded-2xl ring-1 ring-white/10 bg-gradient-to-r from-sky-500/5 to-emerald-500/5 p-6 md:p-10 hover:from-sky-500/10 hover:to-emerald-500/10 transition">
+              <AboutSection
+                aboutMe={settings.about_me?.trim() ? settings.about_me : DEFAULT_ABOUT}
+                achievements={settings.achievements?.trim() ? settings.achievements : DEFAULT_ACHIEVEMENTS}
+              />
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* Education (new, above Experience) */}
+      <section id="education" className="section-anchor pt-10">
+        <div className="mx-auto w-full max-w-6xl section-gutter px-4 md:px-6">
+          <FadeIn>
+            <div className="card-hover rounded-2xl ring-1 ring-white/10 bg-gradient-to-r from-sky-500/5 to-emerald-500/5 transition-all duration-500 motion-safe:hover:translate-x-0.5 motion-safe:hover:-translate-y-0.5 hover:from-sky-500/10 hover:to-emerald-500/10">
+              <EducationSection />
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
       {/* Experience (moved above projects) */}
       <section id="experience" className="section-anchor pt-8">
         <div className="mx-auto w-full max-w-6xl section-gutter px-4 md:px-6">
@@ -438,6 +584,15 @@ export default function HomePage() {
             <div className="card-hover rounded-2xl ring-1 ring-white/10 bg-gradient-to-r from-emerald-500/5 to-violet-500/5 transition-all duration-500 motion-safe:hover:translate-x-0.5 motion-safe:hover:-translate-y-0.5 hover:from-emerald-500/10 hover:to-violet-500/10">
               <ExperienceSection />
             </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* Skills */}
+      <section id="skills" className="section-anchor pt-10">
+        <div className="mx-auto w-full max-w-6xl section-gutter px-4 md:px-6">
+          <FadeIn>
+            <SkillsSection />
           </FadeIn>
         </div>
       </section>
@@ -453,7 +608,37 @@ export default function HomePage() {
         </div>
       </section>
 
-      <CertificationsSection />
+      {/* Certifications */}
+      <section id="certifications" className="section-anchor pt-10">
+        <div className="mx-auto w-full max-w-6xl section-gutter px-4 md:px-6">
+          <FadeIn>
+            <CertificationsSection />
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* Publications */}
+      <section id="publications" className="section-anchor pt-10">
+        <div className="mx-auto w-full max-w-6xl section-gutter px-4 md:px-6">
+          <FadeIn>
+            <PublicationsSection />
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* Contact / Hire Me */}
+      <section id="contact" className="section-anchor pt-10">
+        <div className="mx-auto w-full max-w-6xl section-gutter px-4 md:px-6">
+          <FadeIn>
+            <ContactSection
+              email={settings.contact_email}
+              phone={(settings as any).contact_phone}
+              location={(settings as any).contact_location}
+              socials={(Array.isArray((settings as any).social_links) ? (settings as any).social_links : [])}
+            />
+          </FadeIn>
+        </div>
+      </section>
 
       <footer className="mt-12 md:mt-16 border-t border-white/5">
         <div className="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-12 text-center">
@@ -545,10 +730,37 @@ export default function HomePage() {
             0 20px 60px rgba(124,58,237,0.35),
             0 14px 40px rgba(34,197,94,0.22);
         }
+        /* ===== Hero title animation (word-by-word) ===== */
+        .hero-title{ position:relative; display:grid; place-items:center; gap:.4rem; }
+        .hero-title-words .reveal-word{
+          display:inline-block; opacity:0; transform:translateY(.35em) scale(.98);
+          animation: reveal-word .66s cubic-bezier(.2,.8,.2,1) forwards;
+          background: linear-gradient(90deg,var(--grad-a,#c4b5fd),var(--grad-b,#67e8f9));
+          -webkit-background-clip:text; background-clip:text; color:transparent;
+          text-shadow: 0 0 24px rgba(0,0,0,.25);
+        }
+        .hero-title-words .reveal-word:nth-child(odd){ --grad-a:#a78bfa; --grad-b:#22d3ee; }
+        .hero-title-words .reveal-word:nth-child(even){ --grad-a:#60a5fa; --grad-b:#34d399; }
+        .hero-title-words .reveal-word{ animation-delay: var(--rd,0ms); }
+        @keyframes reveal-word{
+          0%{ opacity:0; transform:translateY(.35em) scale(.98); }
+          100%{ opacity:1; transform:translateY(0) scale(1); }
+        }
+        /* sheen underline under the title */
+        .hero-title-sheen{ position:relative; width:220px; height:6px; border-radius:999px; display:block; margin-top:.35rem; }
+        .hero-title-sheen::before{ content:""; position:absolute; inset:0; border-radius:999px;
+          background: linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);
+          transform: translateX(-120%); animation: title-sheen 3.2s ease-in-out infinite; opacity:.9;
+        }
+        .hero-title-sheen::after{ content:""; position:absolute; inset:auto 30% -8px 30%; height:4px; border-radius:999px;
+          background: linear-gradient(90deg,rgba(109,40,217,.5),rgba(59,130,246,.5),rgba(34,197,94,.5));
+          filter: blur(6px); opacity:.8;
+        }
+        @keyframes title-sheen{ 0%{ transform:translateX(-120%);} 60%,100%{ transform:translateX(120%);} }
       `}</style>
       <style jsx>{`
         .marquee {
-          animation: ribbon-scroll 28s linear infinite;
+          animation: ribbon-scroll var(--ribbon-speed, 45s) linear infinite;
         }
         .group\/ribbon:hover .marquee {
           animation-play-state: paused;
@@ -562,14 +774,20 @@ export default function HomePage() {
         }
 
         /* keep the ribbon from crowding the content above */
-        .skills-ribbon { box-shadow: 0 8px 40px rgba(0,0,0,.25); }
+        .skills-ribbon { 
+          --ribbon-speed: 70s; /* slower scroll speed */
+          box-shadow: 0 8px 40px rgba(0,0,0,.25);
+        }
 
         /* Robot: moves left-to-right across the ribbon while hopping */
         .robot {
           animation:
-            robot-move 28s steps(16, end) infinite,
+            robot-move var(--ribbon-speed, 45s) steps(16, end) infinite,
             robot-hop 0.9s ease-in-out infinite alternate;
           filter: drop-shadow(0 6px 10px rgba(0,0,0,.35));
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .marquee, .robot { animation: none !important; }
         }
 
         /* Match the ribbon scroll speed/duration so it feels synced */
@@ -598,6 +816,8 @@ export default function HomePage() {
           60%  { transform: translateX(120%); }
           100% { transform: translateX(120%); }
         }
+        .type-caret{ display:inline-block; margin-left:.15rem; width:.6ch; color:rgba(255,255,255,.85); animation: caret-blink 1s steps(1,end) infinite; }
+        @keyframes caret-blink{ 0%,100%{ opacity: 0; } 50%{ opacity: 1; } }
       `}</style>
     </>
   );
