@@ -34,7 +34,7 @@ export default function SpotlightCard({ className, children }: Props) {
         className
       )}
       // subtle tilt
-      onMouseEnter={(e) => {
+      onMouseEnter={() => {
         const el = ref.current;
         if (!el) return;
         el.animate([{ transform: "rotateX(0deg) rotateY(0deg)" }, { transform: "rotateX(2deg) rotateY(-2deg)" }], {
@@ -43,7 +43,7 @@ export default function SpotlightCard({ className, children }: Props) {
           easing: "ease-out",
         });
       }}
-      onMouseLeave={(e) => {
+      onMouseLeave={() => {
         const el = ref.current;
         if (!el) return;
         el.animate([{ transform: "rotateX(0deg) rotateY(0deg)" }], {

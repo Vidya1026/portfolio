@@ -6,6 +6,20 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
+type PubRow = {
+  id: string;
+  title: string;
+  slug?: string | null;
+  pub_url?: string | null;
+  abstract?: string | null;
+  metrics?: { views?: number; downloads?: number } | null;
+  tech?: string[] | null;
+  sort_order?: number | null;
+  published?: boolean | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
 type PubForm = {
   id?: string;
   title: string;
@@ -32,7 +46,7 @@ const emptyForm: PubForm = {
 };
 
 export default function PublicationsPanel() {
-  const [list, setList] = useState<any[]>([]);
+  const [list, setList] = useState<PubRow[]>([]);
   const [form, setForm] = useState<PubForm>(emptyForm);
   const [loading, setLoading] = useState(false);
 
@@ -42,12 +56,12 @@ export default function PublicationsPanel() {
       .select("*")
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });
-    setList(data || []);
+    setList((data as PubRow[]) || []);
   }
 
   useEffect(() => { load(); }, []);
 
-  function edit(row: any) {
+  function edit(row: PubRow) {
     setForm({
       id: row.id,
       title: row.title ?? "",

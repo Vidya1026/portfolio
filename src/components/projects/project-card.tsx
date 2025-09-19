@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import SpotlightCard from "@/components/ui/spotlight-card";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 /**
  * Enhanced ProjectCard
@@ -23,9 +24,24 @@ type Project = {
   ctaCase?: string;
   ctaYoutube?: string;
   ctaDocs?: string;
+
+  // LEGACY/FALLBACK URL FIELDS (from Supabase columns)
+  github_url?: string;
+  demo_url?: string;
+  live_url?: string;
+  youtube_url?: string;
+  docs_url?: string;
+  case_url?: string;
 };
 
-export function ProjectCard({ p, className }: { p: Project; className?: string }) {
+export default function ProjectCard({ p, className }: { p: Project; className?: string }) {
+  // Normalize CTAs so buttons always render even if the data uses legacy column names
+  const live = p.ctaLive ?? p.demo_url ?? p.live_url ?? undefined;
+  const code = p.ctaCode ?? p.github_url ?? undefined;
+  const youtube = p.ctaYoutube ?? p.youtube_url ?? undefined;
+  const docs = p.ctaDocs ?? p.docs_url ?? undefined;
+  const cstudy = p.ctaCase ?? p.case_url ?? undefined;
+
   return (
     <SpotlightCard
       className={cn(
@@ -40,16 +56,23 @@ export function ProjectCard({ p, className }: { p: Project; className?: string }
     >
       {/* cover image (optional) */}
       {p.coverImage ? (
-        <div className="-mt-1 mb-4 rounded-xl overflow-hidden bg-black/20 aspect-[16/9] ring-1 ring-white/10">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+        <a
+          href={p.ctaLive ?? p.demo_url ?? p.live_url ?? p.ctaCode ?? p.github_url ?? '#'}
+          target={p.ctaLive || p.demo_url || p.live_url || p.ctaCode || p.github_url ? '_blank' : undefined}
+          rel={p.ctaLive || p.demo_url || p.live_url || p.ctaCode || p.github_url ? 'noreferrer noopener' : undefined}
+          className="relative -mt-1 mb-5 block overflow-hidden rounded-xl bg-black/20 ring-1 ring-white/10 aspect-[4/3]"
+          aria-label={`${p.title} preview`}
+        >
+          <Image
             src={p.coverImage}
             alt={`${p.title} cover`}
-            loading="lazy"
-            decoding="async"
-            className="w-full h-full object-cover"
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            style={{ objectFit: 'cover' }}
+            priority={false}
+            className="transition-transform duration-500 group-hover:scale-[1.03]"
           />
-        </div>
+        </a>
       ) : null}
 
       {/* header */}
@@ -95,10 +118,10 @@ export function ProjectCard({ p, className }: { p: Project; className?: string }
       ) : null}
 
       {/* footer actions */}
-      <div className="footer mt-5 flex flex-wrap items-center gap-2">
-        {p.ctaLive ? (
+      <div className="footer mt-auto pt-4 flex flex-wrap items-center gap-2">
+        {live ? (
           <a
-            href={p.ctaLive}
+            href={live}
             target="_blank"
             rel="noreferrer noopener"
             className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-sm text-white/90 hover:bg-white/10 hover:shadow-[0_8px_24px_rgba(124,58,237,0.25)] transition min-w-0"
@@ -108,9 +131,9 @@ export function ProjectCard({ p, className }: { p: Project; className?: string }
           </a>
         ) : null}
 
-        {p.ctaCode ? (
+        {code ? (
           <a
-            href={p.ctaCode}
+            href={code}
             target="_blank"
             rel="noreferrer noopener"
             className="inline-flex items-center gap-2 rounded-xl border border-violet-400/30 bg-violet-500/15 px-3 py-1.5 text-sm text-violet-100 hover:shadow-[0_8px_24px_rgba(124,58,237,0.35)] transition min-w-0"
@@ -120,9 +143,9 @@ export function ProjectCard({ p, className }: { p: Project; className?: string }
           </a>
         ) : null}
 
-        {p.ctaYoutube ? (
+        {youtube ? (
           <a
-            href={p.ctaYoutube}
+            href={youtube}
             target="_blank"
             rel="noreferrer noopener"
             className="inline-flex items-center gap-2 rounded-xl border border-red-400/30 bg-red-500/15 px-3 py-1.5 text-sm text-red-100 hover:shadow-[0_8px_24px_rgba(239,68,68,0.35)] transition min-w-0"
@@ -133,9 +156,9 @@ export function ProjectCard({ p, className }: { p: Project; className?: string }
           </a>
         ) : null}
 
-        {p.ctaCase ? (
+        {cstudy ? (
           <a
-            href={p.ctaCase}
+            href={cstudy}
             target="_blank"
             rel="noreferrer noopener"
             className="inline-flex items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-3 py-1.5 text-sm text-emerald-100 hover:shadow-[0_8px_24px_rgba(34,197,94,0.35)] transition min-w-0"
@@ -145,9 +168,9 @@ export function ProjectCard({ p, className }: { p: Project; className?: string }
           </a>
         ) : null}
 
-        {p.ctaDocs ? (
+        {docs ? (
           <a
-            href={p.ctaDocs}
+            href={docs}
             target="_blank"
             rel="noreferrer noopener"
             className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-3 py-1.5 text-sm text-white/85 hover:bg-white/10 transition min-w-0"

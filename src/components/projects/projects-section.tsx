@@ -1,35 +1,11 @@
 "use client";
 
 import { FadeIn } from "@/components/motion/FadeIn";
-import { ProjectCard } from "./project-card";
-// The shine/tilt effects rely on CSS keyframes in globals and will be added next
+import ProjectCard from "./project-card";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 
-const IMG_BUCKET = process.env.NEXT_PUBLIC_SUPABASE_IMAGE_BUCKET ?? "cert-images";
-
-/** Normalize a cover image value to a public URL the browser can load */
-function toPublicUrl(input?: string | null): string {
-  if (!input) return "";
-  // If a full URL (public or signed), just return it
-  if (/^https?:\/\//i.test(input)) return input;
-  // Otherwise treat it as a storage path and turn it into a public URL
-  const cleanPath = input.replace(/^\/+/, "");
-  const { data } = supabase.storage.from(IMG_BUCKET).getPublicUrl(cleanPath);
-  return data?.publicUrl ?? "";
-}
-
-/**
- * NOTE:
- * - I enriched the sample data so each project can show a "Key Impact" list
- *   and CTA actions (live/code/case study) in the ProjectCard.
- * - Even if the current ProjectCard ignores some of these fields, keeping them
- *   here makes it easy to wire up once we open that file.
- * - The section layout now matches your reference: centered title + subheadline,
- *   a thin gradient divider, and a left‑aligned responsive grid underneath.
- * - Each card sits in a "glow wrapper" so we get a soft halo and subtle wiggle
- *   on hover without touching the card internals yet.
- */
+const DEFAULT_IMG_BUCKET = process.env.NEXT_PUBLIC_SUPABASE_IMAGE_BUCKET ?? "project-images";
 
 type ProjectItem = {
   title: string;
@@ -37,58 +13,158 @@ type ProjectItem = {
   blurb: string;
   tags: string[];
   keyImpacts?: string[];
-  ctaLive?: string;
-  ctaCode?: string;
-  ctaCase?: string;
-  ctaYoutube?: string;
-  ctaDocs?: string;
+  github?: string | undefined;
+  demo?: string | undefined;
+  docs?: string | undefined;
+  youtube?: string | undefined;
   coverImage?: string;
+  featured?: boolean;
+  sortOrder?: number;
+  /** canonical aliases used by some cards */
+  ctaCode?: string | undefined;
+  ctaLive?: string | undefined;
+  ctaDocs?: string | undefined;
+  ctaYoutube?: string | undefined;
+  ctaCase?: string | undefined;
 };
 
+// ---------- helpers (no `any`) ----------
+const toString = (v: unknown, fallback = ""): string =>
+  typeof v === "string" ? v : typeof v === "number" ? String(v) : fallback;
+
+const toNumber = (v: unknown, fallback = 0): number => {
+  const n = typeof v === "number" ? v : typeof v === "string" ? Number(v) : NaN;
+  return Number.isFinite(n) ? n : fallback;
+};
+
+const asBool = (v: unknown): boolean => v === true || v === 1 || v === "true";
+
+const asArray = (v: unknown): string[] => {
+  if (Array.isArray(v)) return v.filter((x): x is string => typeof x === "string");
+  if (typeof v === "string" && v.trim()) {
+    const sep = v.includes("|") ? "|" : ",";
+    return v.split(sep).map((s) => s.trim()).filter(Boolean);
+  }
+  return [];
+};
+
+const asPipeArray = (v: unknown): string[] | undefined => {
+  if (Array.isArray(v)) return v.filter((x): x is string => typeof x === "string");
+  if (typeof v === "string" && v.trim()) return v.split("|").map((s) => s.trim()).filter(Boolean);
+  return undefined;
+};
+
+const firstString = (row: Record<string, unknown>, keys: string[]): string => {
+  for (const k of keys) {
+    const s = toString(row[k]);
+    if (s) return s;
+  }
+  return "";
+};
+
+/** Convert a storage path or direct URL to a public URL */
+function toPublicUrl(input?: string | null): string {
+  // Guard: nothing provided
+  if (!input) return "";
+  // Already a full URL
+  if (/^https?:\/\//i.test(input)) return input;
+
+  // Clean and short‑circuit if empty after trimming slashes
+  const clean = String(input).replace(/^\/+/, "").trim();
+  if (!clean) return "";
+
+  // Infer bucket from prefix, otherwise fall back to default
+  let bucket = DEFAULT_IMG_BUCKET;
+  let path = clean;
+  if (clean.startsWith("project-images/")) {
+    bucket = "project-images";
+    path = clean.slice("project-images/".length);
+  } else if (clean.startsWith("cert-images/")) {
+    bucket = "cert-images";
+    path = clean.slice("cert-images/".length);
+  }
+
+  // Extra safety: avoid calling storage if path is still empty
+  if (!path) return "";
+
+  try {
+    // Some runtimes can hot‑reload before the client exists – guard it.
+    const client: typeof supabase | undefined = (supabase as unknown as typeof supabase) ?? undefined;
+    if (!client || !client.storage) return "";
+
+    const { data } = client.storage.from(bucket).getPublicUrl(path);
+    return data?.publicUrl ?? "";
+  } catch {
+    return "";
+  }
+}
+
 export default function ProjectsSection() {
+  console.info("[projects-section] mount");
   const [items, setItems] = useState<ProjectItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errMsg, setErrMsg] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
         const { data, error } = await supabase
-          .from('projects')
-          .select(
-            'title, year, blurb, tags, highlights, github_url, demo_url, youtube_url, docs_url, cover_image, featured, sort_order, published, created_at'
-          )
-          .eq('published', true)
-          .order('featured', { ascending: false })
-          .order('sort_order', { ascending: true })
-          .order('created_at', { ascending: false });
+          .from("projects")
+          .select("*")
+          .eq("published", true)
+          .order("created_at", { ascending: false });
         if (error) throw error;
 
-        const parsed: ProjectItem[] = (data ?? []).map((d: any) => ({
-          title: d.title ?? '',
-          year: d.year ?? '',
-          blurb: d.blurb ?? '',
-          tags: Array.isArray(d.tags)
-            ? d.tags
-            : typeof d.tags === 'string' && d.tags.trim()
-            ? d.tags.split(',').map((t: string) => t.trim()).filter(Boolean)
-            : [],
-          keyImpacts: Array.isArray(d.highlights)
-            ? d.highlights
-            : typeof d.highlights === 'string' && d.highlights.trim()
-            ? d.highlights.split('|').map((s: string) => s.trim()).filter(Boolean)
-            : undefined,
-          ctaLive: d.demo_url || '',
-          ctaCode: d.github_url || '',
-          ctaCase: '',
-          ctaYoutube: d.youtube_url || '',
-          ctaDocs: d.docs_url || '',
-          coverImage: toPublicUrl(d.cover_image),
-        }));
+        const parsed: ProjectItem[] = (data ?? []).map((row: Record<string, unknown>) => {
+          const created = toString(row["created_at"]);
+          const year = toString(row["year"]) || (created ? String(new Date(created).getFullYear()) : "");
 
-        setItems(parsed);
+          const coverRaw = firstString(row, [
+            "cover_image",
+            "coverImage",
+            "image",
+            "logo_url",
+            "cover",
+            "img",
+            "thumbnail",
+          ]);
+
+          return {
+            title: toString(row["title"]),
+            year,
+            blurb: firstString(row, ["subtitle", "sub_title", "description", "blurb"]),
+            tags: asArray(row["tags"]),
+            keyImpacts: asPipeArray(row["highlights"]) ?? asArray(row["highlights"]),
+            // raw link fields
+            github: firstString(row, ["github_url", "repo_url", "repo", "github"]) || undefined,
+            demo: firstString(row, ["live_url", "website", "demo_url", "site_url", "url"]) || undefined,
+            docs: firstString(row, ["docs_url", "documentation_url", "doc"]) || undefined,
+            youtube: firstString(row, ["youtube_url", "video_url", "video"]) || undefined,
+            // canonical aliases expected by ProjectCard
+            ctaCode: firstString(row, ["github_url", "repo_url", "repo", "github"]) || undefined,
+            ctaLive: firstString(row, ["live_url", "website", "demo_url", "site_url", "url"]) || undefined,
+            ctaDocs: firstString(row, ["docs_url", "documentation_url", "doc"]) || undefined,
+            ctaYoutube: firstString(row, ["youtube_url", "video_url", "video"]) || undefined,
+            ctaCase: firstString(row, ["case_url", "case_study_url", "article_url", "blog_url"]) || undefined,
+            coverImage: toPublicUrl(coverRaw),
+            featured: asBool(row["featured"]),
+            sortOrder: toNumber(row["sort_order"], 999),
+          };
+        });
+
+        console.info("[projects-section] fetched", { count: parsed.length });
+
+        setItems(
+          parsed.sort((a, b) => {
+            const f = Number(b.featured) - Number(a.featured);
+            if (f !== 0) return f;
+            return (a.sortOrder ?? 999) - (b.sortOrder ?? 999);
+          })
+        );
       } catch (e) {
-        console.warn('[projects-section] supabase fetch failed', e);
+        console.error("[projects-section] supabase fetch failed", e);
         setItems([]);
+        setErrMsg(e instanceof Error ? e.message : "Failed to load projects");
       } finally {
         setLoading(false);
       }
@@ -96,45 +172,52 @@ export default function ProjectsSection() {
   }, []);
 
   return (
-    <section className="relative z-10 isolate py-18 md:py-24">
+    <section id="projects" className="relative z-20 isolate py-18 md:py-24">
       <div className="container">
-        {/* Heading block */}
         <FadeIn>
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="text-4xl md:text-5xl font-extrabold leading-tight">
               <span className="gradient-text">Featured Projects</span>
             </h2>
-
             <p className="mt-4 text-sm md:text-base text-muted-foreground">
               A selection of impactful projects showcasing full‑stack engineering and AI integration.
             </p>
-
-            {/* Slim gradient divider like the reference */}
             <div className="mx-auto mt-6 h-px w-40 md:w-56 bg-gradient-to-r from-transparent via-violet-500/60 to-transparent rounded-full" />
-            {/* ambient dots */}
             <div className="pointer-events-none mx-auto mt-2 h-[2px] w-24 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full" />
           </div>
         </FadeIn>
 
-        {/* Card grid */}
-        <div className="relative z-10 isolate mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 place-items-stretch">
+        <div className="relative z-10 isolate mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 place-items-stretch min-h-[2rem]">
           {loading && (
             <div className="col-span-full text-center text-sm text-white/60">Loading projects…</div>
           )}
           {!loading && items.length === 0 && (
-            <div className="col-span-full text-center text-sm text-white/60">No projects yet.</div>
+            <div className="col-span-full text-center text-sm text-white/70 border border-white/10 rounded-xl py-6">
+              {errMsg ? (
+                <>
+                  <div className="font-medium text-white/80">Couldn&apos;t load projects.</div>
+                  <div className="mt-1 text-xs text-white/50">Supabase says: {String(errMsg ?? "unknown error")}</div>
+                </>
+              ) : (
+                <>
+                  No projects found. Make sure your <code className="px-1 rounded bg-white/5">projects</code> table has
+                  published rows and the column names match.
+                </>
+              )}
+            </div>
           )}
-          {!loading && items.map((p, i) => (
-            <FadeIn key={p.title} delay={i * 0.08}>
-              <div className="group relative z-0 [--halo:theme(colors.violet.500/18)] [--ring:conic-gradient(from_180deg,theme(colors.violet.500/.4),theme(colors.fuchsia.500/.35),theme(colors.cyan.400/.35),theme(colors.violet.500/.4))] hover:animate-[wiggle_800ms_ease-in-out] transition-transform duration-300 will-change-transform hover:scale-[1.02] hover:-translate-y-1">
-                <div className="pointer-events-none absolute -inset-1.5 rounded-2xl bg-[radial-gradient(30%_40%_at_50%_0%,var(--halo),transparent_70%)] opacity-0 group-hover:opacity-80 transition-opacity duration-300 -z-10" />
-                <div className="relative z-10 isolate min-h-[460px] flex rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-[0.5px] overflow-hidden project-card">
-                  <div aria-hidden className="card-sheen" />
-                  <ProjectCard p={p} />
+          {!loading &&
+            items.map((p, i) => (
+              <FadeIn key={`${p.title}-${p.year}-${i}`} delay={i * 0.08}>
+                <div className="group relative z-0 [--halo:theme(colors.violet.500/18)] [--ring:conic-gradient(from_180deg,theme(colors.violet.500/.4),theme(colors.fuchsia.500/.35),theme(colors.cyan.400/.35),theme(colors.violet.500/.4))] hover:animate-[wiggle_800ms_ease-in-out] transition-transform duration-300 will-change-transform hover:scale-[1.02] hover:-translate-y-1">
+                  <div className="pointer-events-none absolute -inset-1.5 rounded-2xl bg-[radial-gradient(30%_40%_at_50%_0%,var(--halo),transparent_70%)] opacity-0 group-hover:opacity-80 transition-opacity duration-300 -z-10" />
+                  <div className="relative z-10 isolate min-h-[460px] flex rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-[0.5px] overflow-hidden project-card">
+                    <div aria-hidden className="card-sheen" />
+                    <ProjectCard p={p} />
+                  </div>
                 </div>
-              </div>
-            </FadeIn>
-          ))}
+              </FadeIn>
+            ))}
         </div>
       </div>
     </section>

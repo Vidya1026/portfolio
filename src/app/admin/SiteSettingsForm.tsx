@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 
 
@@ -38,6 +38,25 @@ type SiteSettings = {
   social_links?: SocialLink[];
   avatar_url?: string;
   feature_cards?: FeatureCard[];  // NEW: stored as jsonb in DB
+};
+
+type SiteRow = {
+  id?: string;
+  hero_title?: string | null;
+  hero_tagline?: string | null;
+  about_me?: string | null;
+  achievements?: string | null;
+  metrics_years?: string | null;
+  metrics_projects?: string | null;
+  metrics_certs?: string | null;
+  skills?: string[] | null;
+  resume_url?: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  contact_location?: string | null;
+  social_links?: SocialLink[] | string | null;
+  avatar_url?: string | null;
+  feature_cards?: FeatureCard[] | string | null;
 };
 
 function toCSV(a?: string[]) { return (a ?? []).join(', '); }
@@ -154,38 +173,38 @@ export default function SiteSettingsForm() {
       }
       if (mounted) {
         if (data) {
+          const row = data as SiteRow;
+
           // Normalize feature_cards (may be json string from older rows)
-          let featureCards: unknown = data.feature_cards ?? [];
+          let featureCards: unknown = row.feature_cards ?? [];
           if (typeof featureCards === 'string') {
-            try {
-              featureCards = JSON.parse(featureCards);
-            } catch {
-              featureCards = [];
-            }
+            try { featureCards = JSON.parse(featureCards); } catch { featureCards = []; }
           }
           if (!Array.isArray(featureCards)) featureCards = [];
+
           // Normalize social_links (may be json string from older rows)
-          let socialLinks: unknown = (data as any).social_links ?? [];
+          let socialLinks: unknown = row.social_links ?? [];
           if (typeof socialLinks === 'string') {
-            try { socialLinks = JSON.parse(socialLinks as string); } catch { socialLinks = []; }
+            try { socialLinks = JSON.parse(socialLinks); } catch { socialLinks = []; }
           }
           if (!Array.isArray(socialLinks)) socialLinks = [];
+
           setForm({
-            id: data.id,
-            hero_title: data.hero_title ?? '',
-            hero_tagline: data.hero_tagline ?? '',
-            about_me: data.about_me ?? '',
-            achievements: data.achievements ?? '',
-            metrics_years: data.metrics_years ?? '',
-            metrics_projects: data.metrics_projects ?? '',
-            metrics_certs: data.metrics_certs ?? '',
-            skills: Array.isArray(data.skills) ? data.skills : [],
-            resume_url: data.resume_url ?? '',
-            contact_email: data.contact_email ?? '',
-            contact_phone: (data as any).contact_phone ?? '',
-            contact_location: (data as any).contact_location ?? '',
+            id: row.id,
+            hero_title: row.hero_title ?? '',
+            hero_tagline: row.hero_tagline ?? '',
+            about_me: row.about_me ?? '',
+            achievements: row.achievements ?? '',
+            metrics_years: row.metrics_years ?? '',
+            metrics_projects: row.metrics_projects ?? '',
+            metrics_certs: row.metrics_certs ?? '',
+            skills: Array.isArray(row.skills) ? row.skills : [],
+            resume_url: row.resume_url ?? '',
+            contact_email: row.contact_email ?? '',
+            contact_phone: row.contact_phone ?? '',
+            contact_location: row.contact_location ?? '',
             social_links: socialLinks as SocialLink[],
-            avatar_url: data.avatar_url ?? '',
+            avatar_url: row.avatar_url ?? '',
             feature_cards: featureCards as FeatureCard[],
           });
         }
@@ -243,9 +262,10 @@ export default function SiteSettingsForm() {
 
       if (error) throw error;
       setMsg('Saved!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setMsg(err.message || 'Save failed');
+      const m = err instanceof Error ? err.message : 'Save failed';
+      setMsg(m);
     } finally {
       setSaving(false);
     }
@@ -286,9 +306,10 @@ export default function SiteSettingsForm() {
 
       setForm((f) => ({ ...f, avatar_url: publicUrl }));
       setMsg('Avatar uploaded ✔');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[avatar upload]', err);
-      setMsg(err?.message || 'Upload failed');
+      const m = err instanceof Error ? err.message : 'Upload failed';
+      setMsg(m);
     } finally {
       setUploadingAvatar(false);
       if (inputEl) inputEl.value = '';

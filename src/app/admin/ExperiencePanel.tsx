@@ -35,9 +35,6 @@ function toPipe(a?: string[]) {
   // For editing, show one bullet per line
   return (a ?? []).join('\n');
 }
-function pipeToArray(s: string) {
-  return s.split('|').map(x => x.trim()).filter(Boolean);
-}
 function parseBullets(input: string) {
   return input
     .split(/\r?\n|\|/g)
@@ -93,11 +90,11 @@ export default function ExperiencePanel() {
       .order('sort_order', { ascending: true })
       .order('start', { ascending: false });
     if (!error && data) {
-      const normalized = (data as any[]).map((r) => ({
+      const normalized = (data as ExperienceRow[]).map((r) => ({
         ...r,
         tools: normalizeTools(r.tools),
       }));
-      setRows(normalized as any);
+      setRows(normalized as ExperienceRow[]);
     }
     setLoading(false);
   }
@@ -136,8 +133,12 @@ export default function ExperiencePanel() {
       setBulletsText('');
       setToolsText('');
       await load();
-    } catch (err: any) {
-      setMsg(err.message || 'Save failed');
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'message' in err && typeof (err as any).message === 'string') {
+        setMsg((err as any).message || 'Save failed');
+      } else {
+        setMsg('Save failed');
+      }
     } finally {
       setSaving(false);
     }
@@ -202,13 +203,17 @@ export default function ExperiencePanel() {
         .upload(path, file, { upsert: false, cacheControl: '3600' });
       if (upErr) throw upErr;
 
-      const { data } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(path);
+      const { data }: { data: { publicUrl: string } } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(path);
       const publicUrl = data.publicUrl;
       setForm(f => ({ ...f, logo_url: publicUrl }));
       setPreviewUrl(publicUrl);
       setMsg('Logo uploaded ✔');
-    } catch (err: any) {
-      setMsg(err.message || 'Upload failed');
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'message' in err && typeof (err as any).message === 'string') {
+        setMsg((err as any).message || 'Upload failed');
+      } else {
+        setMsg('Upload failed');
+      }
     } finally {
       setUploadingLogo(false);
       if (previewUrl && previewUrl.startsWith('blob:')) { URL.revokeObjectURL(previewUrl); }

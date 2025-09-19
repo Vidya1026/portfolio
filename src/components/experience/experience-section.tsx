@@ -1,42 +1,62 @@
 "use client";
+"use client";
 
 import { FadeIn } from "@/components/motion/FadeIn";
 import { ExperienceItem } from "./experience-item";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 
+// Minimal shape we render on the page (keeps us independent of DB typing)
+interface ExperienceVM {
+  org: string;
+  role: string;
+  start: string | null;
+  end: string | null;
+  bullets: string[];
+  tools: string[];
+  logoUrl: string | null;
+}
+
+// Small helpers to coerce values coming from the DB safely
+function toStringOrNull(v: unknown): string | null {
+  return typeof v === "string" ? v : null;
+}
+function toString(v: unknown, fallback = ""): string {
+  return typeof v === "string" ? v : fallback;
+}
+function toStringArray(v: unknown): string[] {
+  if (Array.isArray(v)) return v.filter((x): x is string => typeof x === "string");
+  if (typeof v === "string") {
+    // allow both comma and pipe separated values
+    const parts = v.split(/[|,]/).map((s) => s.trim()).filter(Boolean);
+    return parts;
+  }
+  return [];
+}
+
 export default function ExperienceSection() {
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<ExperienceVM[]>([]);
 
   useEffect(() => {
     (async () => {
       const { data, error } = await supabase
-        .from("experience")
+        .from("experience") // table name intentionally singular per your schema
         .select("*")
         .eq("published", true)
         .order("sort_order", { ascending: true })
         .order("start", { ascending: false });
 
-      if (!error && data) {
-        setItems(
-          data.map((e: any) => ({
-            org: e.org,
-            role: e.role,
-            start: e.start,
-            end: e.end,
-            bullets: Array.isArray(e.bullets)
-              ? e.bullets
-              : typeof e.bullets === "string"
-                ? e.bullets.split("|").map((s: string) => s.trim()).filter(Boolean)
-                : [],
-            tools: Array.isArray(e.tools)
-              ? e.tools
-              : typeof e.tools === "string"
-                ? e.tools.split(",").map((s: string) => s.trim()).filter(Boolean)
-                : [],
-            logoUrl: e.logo_url,
-          }))
-        );
+      if (!error && Array.isArray(data)) {
+        const mapped: ExperienceVM[] = data.map((row) => ({
+          org: toString((row as Record<string, unknown>)["org"]),
+          role: toString((row as Record<string, unknown>)["role"]),
+          start: toStringOrNull((row as Record<string, unknown>)["start"]),
+          end: toStringOrNull((row as Record<string, unknown>)["end"]),
+          bullets: toStringArray((row as Record<string, unknown>)["bullets"]),
+          tools: toStringArray((row as Record<string, unknown>)["tools"]),
+          logoUrl: toStringOrNull((row as Record<string, unknown>)["logo_url"]),
+        }));
+        setItems(mapped);
       } else {
         setItems([]);
       }
@@ -49,9 +69,7 @@ export default function ExperienceSection() {
         <FadeIn>
           <div className="flex flex-col items-center justify-center max-w-7xl w-full text-center relative">
             <h2 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight text-center">
-              <span className="gradient-text drop-shadow-[0_0_12px_rgba(167,139,250,0.65)]">
-                Experience
-              </span>
+              <span className="gradient-text drop-shadow-[0_0_12px_rgba(167,139,250,0.65)]">Experience</span>
             </h2>
             <p className="mt-4 text-base md:text-lg text-muted-foreground">
               Highlighting my professional journey and impactful contributions.
@@ -76,14 +94,14 @@ export default function ExperienceSection() {
           <div className="space-y-6">
             {items.map((it, idx) => (
               <ExperienceItem
-                key={idx}
+                key={`${it.org}-${it.role}-${idx}`}
                 org={it.org}
                 role={it.role}
-                start={it.start}
-                end={it.end}
+                start={it.start ?? ""}
+                end={it.end ?? ""}
                 bullets={it.bullets}
                 tools={it.tools}
-                logoUrl={it.logoUrl}
+                logoUrl={it.logoUrl ?? undefined}
                 last={idx === items.length - 1}
               />
             ))}

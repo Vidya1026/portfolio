@@ -1,4 +1,24 @@
-"use client";
+ "use client";
+// --- Site settings types ---
+type SocialLink = { label: string; url: string; icon?: string };
+type FeatureCard = { title: string; body: string; icon?: string };
+type SiteRow = {
+  hero_title?: string | null;
+  hero_tagline?: string | null;
+  about_me?: string | null;
+  achievements?: string | null;
+  metrics_years?: string | null;
+  metrics_projects?: string | null;
+  metrics_certs?: string | null;
+  skills?: string[] | null;
+  resume_url?: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  contact_location?: string | null;
+  social_links?: SocialLink[] | string | null;
+  avatar_url?: string | null;
+  feature_cards?: FeatureCard[] | string | null;
+};
 import { Button } from "@/components/ui/button";
 import { Aurora } from "@/components/branding/Aurora";
 import { FadeIn } from "@/components/motion/FadeIn";
@@ -117,32 +137,6 @@ const SvgCertificate = (
 );
 
 
-function TypingHeading({ text, className = "" }: { text: string; className?: string }) {
-  const [i, setI] = useState(0);
-  const [done, setDone] = useState(false);
-
-  useEffect(() => {
-    if (done) return;
-    const step = () => {
-      setI((v) => {
-        if (v >= text.length) {
-          setDone(true);
-          return v;
-        }
-        return v + 1;
-      });
-    };
-    const t = setInterval(step, 45);
-    return () => clearInterval(t);
-  }, [text, done]);
-
-  return (
-    <h1 className={`inline-block text-4xl md:text-6xl font-extrabold tracking-tight gradient-text leading-[1.15] pb-1 ${className}`}>
-      {text.slice(0, i)}
-      <span className={`type-caret ${done ? "opacity-0 md:opacity-100" : ""}`}>|</span>
-    </h1>
-  );
-}
 
 function HeroTitle({
   text,
@@ -162,15 +156,18 @@ function HeroTitle({
         aria-hidden
         className="hero-title-words inline-flex flex-wrap items-baseline justify-center gap-x-3 gap-y-2"
       >
-        {words.map((w, i) => (
-          <span
-            key={`${w}-${i}`}
-            className="reveal-word gradient-text text-4xl md:text-6xl font-extrabold tracking-tight leading-[1.15] pb-1"
-            style={{ ["--rd" as any]: `${i * 90}ms` }}
-          >
-            {w}
-          </span>
-        ))}
+        {words.map((w, i) => {
+          const wordStyle: React.CSSProperties & Record<'--rd', string> = { ['--rd']: `${i * 90}ms` };
+          return (
+            <span
+              key={`${w}-${i}`}
+              className="reveal-word gradient-text text-4xl md:text-6xl font-extrabold tracking-tight leading-[1.15] pb-1"
+              style={wordStyle}
+            >
+              {w}
+            </span>
+          );
+        })}
       </div>
 
       {/* Subtle animated underline sheen */}
@@ -208,23 +205,25 @@ function MetricsBar() {
 
 export default function HomePage() {
   const [showStrengths, setShowStrengths] = useState(true);
-  const [settings, setSettings] = useState({
-    hero_title: "",
-    hero_tagline: "",
-    about_me: "",
-    achievements: "",
-    metrics_years: "",
-    metrics_projects: "",
-    metrics_certs: "",
-    skills: [] as string[],
-    resume_url: "",
-    contact_email: "",
-    contact_phone: "",
-    contact_location: "",
-    social_links: [] as { label: string; url: string; icon?: string }[],
-    avatar_url: "",
-    feature_cards: [] as { title: string; body: string; icon?: string }[],
-  });
+  const [settings, setSettings] = useState<Required<Omit<SiteRow, 'social_links' | 'feature_cards'>> & { social_links: SocialLink[]; feature_cards: FeatureCard[] }>(
+    {
+      hero_title: "",
+      hero_tagline: "",
+      about_me: "",
+      achievements: "",
+      metrics_years: "",
+      metrics_projects: "",
+      metrics_certs: "",
+      skills: [],
+      resume_url: "",
+      contact_email: "",
+      contact_phone: "",
+      contact_location: "",
+      social_links: [],
+      avatar_url: "",
+      feature_cards: [],
+    }
+  );
   const lastY = useRef(0);
   const tileRef = useRef<HTMLDivElement | null>(null);
   const onTileMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -270,44 +269,35 @@ export default function HomePage() {
         .limit(1)
         .maybeSingle();
       if (!error && data) {
-        // normalize feature_cards in case it's saved as JSON text
-        let featureCards: unknown = data.feature_cards ?? [];
+        const row = data as SiteRow;
+        let featureCards: unknown = row.feature_cards ?? [];
         if (typeof featureCards === 'string') {
-          try {
-            featureCards = JSON.parse(featureCards);
-          } catch {
-            featureCards = [];
-          }
+          try { featureCards = JSON.parse(featureCards); } catch { featureCards = []; }
         }
         if (!Array.isArray(featureCards)) featureCards = [];
 
-        // normalize social_links in case it's saved as JSON text
-        let socialLinks: unknown = (data as any).social_links ?? [];
+        let socialLinks: unknown = row.social_links ?? [];
         if (typeof socialLinks === 'string') {
-          try {
-            socialLinks = JSON.parse(socialLinks as string);
-          } catch {
-            socialLinks = [];
-          }
+          try { socialLinks = JSON.parse(socialLinks); } catch { socialLinks = []; }
         }
         if (!Array.isArray(socialLinks)) socialLinks = [];
 
         setSettings({
-          hero_title: data.hero_title ?? "",
-          hero_tagline: data.hero_tagline ?? "",
-          about_me: data.about_me ?? "",
-          achievements: data.achievements ?? "",
-          metrics_years: data.metrics_years ?? "",
-          metrics_projects: data.metrics_projects ?? "",
-          metrics_certs: data.metrics_certs ?? "",
-          skills: Array.isArray(data.skills) ? data.skills : [],
-          resume_url: data.resume_url ?? "",
-          contact_email: data.contact_email ?? "",
-          contact_phone: (data as any).contact_phone ?? "",
-          contact_location: (data as any).contact_location ?? "",
-          social_links: socialLinks as { label: string; url: string; icon?: string }[],
-          avatar_url: data.avatar_url ?? "",
-          feature_cards: featureCards as { title: string; body: string; icon?: string }[],
+          hero_title: row.hero_title ?? "",
+          hero_tagline: row.hero_tagline ?? "",
+          about_me: row.about_me ?? "",
+          achievements: row.achievements ?? "",
+          metrics_years: row.metrics_years ?? "",
+          metrics_projects: row.metrics_projects ?? "",
+          metrics_certs: row.metrics_certs ?? "",
+          skills: Array.isArray(row.skills) ? row.skills : [],
+          resume_url: row.resume_url ?? "",
+          contact_email: row.contact_email ?? "",
+          contact_phone: row.contact_phone ?? "",
+          contact_location: row.contact_location ?? "",
+          social_links: socialLinks as SocialLink[],
+          avatar_url: row.avatar_url ?? "",
+          feature_cards: featureCards as FeatureCard[],
         });
       } else {
         if (error) {
@@ -317,7 +307,7 @@ export default function HomePage() {
     })();
   }, []);
 
-  function parseMetric(input: string | undefined, fallbackNum: number, fallbackSuffix = "") {
+  function parseMetric(input: string | null | undefined, fallbackNum: number, fallbackSuffix = "") {
     const s = (input || "").trim();
     let num = fallbackNum;
     let suffix = fallbackSuffix;
@@ -631,10 +621,10 @@ export default function HomePage() {
         <div className="mx-auto w-full max-w-6xl section-gutter px-4 md:px-6">
           <FadeIn>
             <ContactSection
-              email={settings.contact_email}
-              phone={(settings as any).contact_phone}
-              location={(settings as any).contact_location}
-              socials={(Array.isArray((settings as any).social_links) ? (settings as any).social_links : [])}
+              email={settings.contact_email ?? undefined}
+              phone={settings.contact_phone ?? undefined}
+              location={settings.contact_location ?? undefined}
+              socials={Array.isArray(settings.social_links) ? settings.social_links : []}
             />
           </FadeIn>
         </div>

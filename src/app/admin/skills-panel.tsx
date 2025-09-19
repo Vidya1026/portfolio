@@ -47,21 +47,29 @@ export default function SkillsPanel() {
       .select("*")
       .order("group_id", { ascending: true })
       .order("sort_order", { ascending: true });
-    setGroups(g as SkillGroup[] ?? []);
-    setSkills(s as Skill[] ?? []);
+    setGroups((g ?? []) as SkillGroup[]);
+    setSkills((s ?? []) as Skill[]);
   };
 
   useEffect(() => { load(); }, []);
 
   const upsertGroup = async () => {
-    setBusy(true);
-    const payload = { ...gForm };
-    const { error } = await supabase.from("skill_groups").upsert(payload as any).select();
-    if (!error) {
-      setGForm({ name:"", blurb:"", icon:"", icon_url:"", accent:"emerald", sort_order:999, published:true });
-      await load();
+    try {
+      setBusy(true);
+      const payload = { ...gForm };
+      const { error } = await supabase.from("skill_groups").upsert(payload).select();
+      if (!error) {
+        setGForm({ name:"", blurb:"", icon:"", icon_url:"", accent:"emerald", sort_order:999, published:true });
+        await load();
+      } else {
+        alert("Error saving group: " + (error?.message ?? "Unknown error"));
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      alert("Error saving group: " + msg);
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   };
 
   const editGroup = (g: SkillGroup) => setGForm({ ...g });
@@ -75,13 +83,21 @@ export default function SkillsPanel() {
 
   const upsertSkill = async () => {
     if (!sForm.group_id) return alert("Please select a skill group before saving.");
-    setBusy(true);
-    const { error } = await supabase.from("skills").upsert(sForm as any).select();
-    if (!error) {
-      setSForm({ group_id:"", name:"", sort_order:999, published:true });
-      await load();
+    try {
+      setBusy(true);
+      const { error } = await supabase.from("skills").upsert(sForm).select();
+      if (!error) {
+        setSForm({ group_id:"", name:"", sort_order:999, published:true });
+        await load();
+      } else {
+        alert("Error saving skill: " + (error?.message ?? "Unknown error"));
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      alert("Error saving skill: " + msg);
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   };
 
   const editSkill = (s: Skill) => setSForm({ ...s });
@@ -96,25 +112,31 @@ export default function SkillsPanel() {
   const saveBulkSkills = async () => {
     if (!bulkSkills.trim()) return alert("Please enter skills to add.");
     if (!sForm.group_id) return alert("Please select a skill group for bulk addition.");
-    setBusy(true);
-    const entries = bulkSkills
-      .split(/[\n,]+/)
-      .map(s => s.trim())
-      .filter(s => s.length > 0)
-      .map((name, idx) => ({
-        group_id: sForm.group_id!,
-        name,
-        sort_order: 999 + idx,
-        published: true,
-      }));
-    const { error } = await supabase.from("skills").upsert(entries as any).select();
-    if (!error) {
-      setBulkSkills("");
-      await load();
-    } else {
-      alert("Error saving bulk skills: " + error.message);
+    try {
+      setBusy(true);
+      const entries = bulkSkills
+        .split(/[\n,]+/)
+        .map(s => s.trim())
+        .filter(s => s.length > 0)
+        .map((name, idx) => ({
+          group_id: sForm.group_id!,
+          name,
+          sort_order: 999 + idx,
+          published: true,
+        }));
+      const { error } = await supabase.from("skills").upsert(entries).select();
+      if (!error) {
+        setBulkSkills("");
+        await load();
+      } else {
+        alert("Error saving bulk skills: " + (error?.message ?? "Unknown error"));
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      alert("Error saving bulk skills: " + msg);
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   };
 
   return (
@@ -255,7 +277,8 @@ export default function SkillsPanel() {
             <textarea
               id="bulkSkills"
               className="input resize-y min-h-[100px]"
-              placeholder="Enter multiple skill names separated by commas or new lines"
+              placeholder="e.g. SQL, Python, TensorFlow, React
+(Separate with commas or new lines)"
               value={bulkSkills}
               onChange={e => setBulkSkills(e.target.value)}
               disabled={busy}

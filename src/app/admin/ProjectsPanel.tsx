@@ -2,7 +2,7 @@
 
 const IMAGE_BUCKET = process.env.NEXT_PUBLIC_SUPABASE_IMAGE_BUCKET || 'images';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 
 function storagePathFromPublicUrl(url?: string | null, bucket: string = IMAGE_BUCKET) {
@@ -76,7 +76,7 @@ export default function ProjectsPanel() {
       .order('featured', { ascending: false })
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: false });
-    if (!error && data) setRows(data as any);
+    if (!error && data) setRows(data as Row[]);
     setLoading(false);
   }
 
@@ -139,8 +139,9 @@ export default function ProjectsPanel() {
         published: true,
       });
       await load();
-    } catch (err: any) {
-      setMsg(err.message || 'Save failed');
+    } catch (err: unknown) {
+      const m = err instanceof Error ? err.message : 'Save failed';
+      setMsg(m);
     } finally {
       setSaving(false);
     }
@@ -211,8 +212,9 @@ export default function ProjectsPanel() {
 
       setForm(f => ({ ...f, cover_image: publicUrl }));
       setMsg('Cover uploaded ✔');
-    } catch (err: any) {
-      setMsg(err.message || 'Upload failed');
+    } catch (err: unknown) {
+      const m = err instanceof Error ? err.message : 'Upload failed';
+      setMsg(m);
     } finally {
       setUploadingCover(false);
       // reset the input so the same file can be selected again if needed

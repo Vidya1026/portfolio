@@ -15,6 +15,10 @@ function normalizeUrl(u: string) {
   }
 }
 
+function normalizePhone(p: string) {
+  return p.replace(/\s+/g, "").replace(/[^+\d]/g, "");
+}
+
 type Social = { label: string; url: string; icon?: string };
 
 function MapPinIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -111,7 +115,7 @@ export default function ContactSection({
                       value={
                         <span className="inline-flex items-center gap-2">
                           <a
-                            href={`tel:${phone}`}
+                            href={`tel:${normalizePhone(phone)}`}
                             className="hover:underline"
                             aria-label={`Call ${phone}`}
                           >
@@ -135,7 +139,7 @@ export default function ContactSection({
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label={`Open ${s.label}`}
-                          className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 bg-white/[0.06] ring-1 ring-emerald-400/20 text-white/85 hover:bg-white/[0.12] transition hover:-translate-y-0.5 shadow-[0_0_0_rgba(16,185,129,0)] hover:shadow-[0_0_24px_rgba(16,185,129,.25)]"
+                          className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 bg-white/[0.08] ring-1 ring-emerald-400/25 text-white/85 hover:bg-white/[0.14] transition hover:-translate-y-0.5 shadow-[0_0_0_rgba(16,185,129,0)] hover:shadow-[0_0_24px_rgba(16,185,129,.25)] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
                         >
                           {s.icon ? (
                             <span className={`text-[20px] text-emerald-300 ${s.icon}`} />
@@ -251,8 +255,8 @@ function InfoRow({
   value: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-3">
-      <span aria-hidden className="shrink-0 inline-grid place-items-center size-9 rounded-lg ring-1 ring-white/10 bg-white/[0.06] text-emerald-300">
+    <div className="flex items-start gap-3 group">
+      <span aria-hidden className="shrink-0 inline-grid place-items-center size-9 rounded-lg ring-1 ring-white/10 bg-white/[0.06] text-emerald-300 transition-shadow group-hover:shadow-[0_0_22px_rgba(16,185,129,0.35)]">
         {icon}
       </span>
       <div>
@@ -349,15 +353,17 @@ function ContactForm({ email }: { email?: string }) {
         <button
           type="submit"
           className="group relative overflow-hidden rounded-xl btn-green-glow px-5 py-2.5 font-semibold"
+          aria-describedby={sent ? 'contact-sent' : undefined}
         >
           <span className="relative z-10 inline-flex items-center gap-2">
             <span aria-hidden className="i-tabler-send text-[20px] group-hover:translate-x-0.5 transition-transform" />
             Send Message
           </span>
-          <span className="pointer-events-none absolute inset-0 -translate-x-1/2 bg-gradient-to-r from-transparent via-white/35 to-transparent opacity-0 group-hover:opacity-100 transition duration-700 group-hover:translate-x-[120%]" />
+          <span className="pointer-events-none absolute inset-0 -translate-x-1/2 bg-gradient-to-r from-transparent via-white/35 to-transparent opacity-0 group-hover:opacity-100 transition duration-700 group-hover:translate-x-[120%] auto-sweep" />
         </button>
         {sent && (
           <div
+            id="contact-sent"
             role="status"
             aria-live="polite"
             className="mt-3 inline-flex items-center gap-2 text-sm text-emerald-300/90 animate-fade-in"
@@ -415,6 +421,14 @@ function ContactForm({ email }: { email?: string }) {
         }
         .animate-fade-in {
           animation: fade-in 300ms ease forwards;
+        }
+        .btn-green-glow .auto-sweep {
+          animation: sweep 1400ms ease-out 120ms 1 both;
+        }
+        @keyframes sweep {
+          from { transform: translateX(-60%); opacity: 0; }
+          50% { opacity: .85; }
+          to { transform: translateX(120%); opacity: 0; }
         }
       `}</style>
     </form>

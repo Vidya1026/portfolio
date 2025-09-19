@@ -14,6 +14,30 @@ type Publication = {
   sort_order: number;
 };
 
+function toString(v: unknown, fallback = ""): string {
+  return typeof v === "string" ? v : typeof v === "number" ? String(v) : fallback;
+}
+function toStringArray(v: unknown): string[] {
+  if (Array.isArray(v)) return v.filter((x): x is string => typeof x === "string");
+  if (typeof v === "string" && v.trim()) {
+    // support comma or pipe-separated
+    return v.split(/[|,]/).map(s => s.trim()).filter(Boolean);
+  }
+  return [];
+}
+function toMetrics(v: unknown): { views?: number; downloads?: number } {
+  if (v && typeof v === "object") {
+    const o = v as Record<string, unknown>;
+    const views = typeof o.views === "number" ? o.views : Number(o.views);
+    const downloads = typeof o.downloads === "number" ? o.downloads : Number(o.downloads);
+    const out: { views?: number; downloads?: number } = {};
+    if (!Number.isNaN(views)) out.views = views as number;
+    if (!Number.isNaN(downloads)) out.downloads = downloads as number;
+    return out;
+  }
+  return {};
+}
+
 const CountUp = ({ value, duration = 900 }: { value: number; duration?: number }) => {
   const [v, setV] = useState(0);
   useEffect(() => {
@@ -52,15 +76,20 @@ export default function PublicationsSection() {
 
         if (data) {
           setItems(
-            data.map((d: any) => ({
-              ...d,
-              tech: Array.isArray(d.tech) ? d.tech : [],
-              metrics: d.metrics ?? {},
+            (data as Record<string, unknown>[]).map((row) => ({
+              id: toString(row["id"]),
+              title: toString(row["title"]),
+              slug: typeof row["slug"] === "string" ? (row["slug"] as string) : null,
+              pub_url: typeof row["pub_url"] === "string" ? (row["pub_url"] as string) : null,
+              abstract: typeof row["abstract"] === "string" ? (row["abstract"] as string) : null,
+              metrics: toMetrics(row["metrics"]),
+              tech: toStringArray(row["tech"]),
+              sort_order: typeof row["sort_order"] === "number" ? (row["sort_order"] as number) : 999,
             }))
           );
         }
-      } catch (e: any) {
-        setErr(e?.message ?? "Failed to load publications.");
+      } catch (e: unknown) {
+        setErr(e instanceof Error ? e.message : "Failed to load publications.");
       } finally {
         setLoading(false);
       }

@@ -55,7 +55,7 @@ export default function EducationSection() {
 
       {/* Timeline */}
       {!loading && !error && items.length > 0 && (
-        <div className="mx-auto max-w-5xl grid gap-8">
+        <div className="mx-auto max-w-6xl grid gap-10">
           {items.map((e, idx) => (
             <FadeIn key={e.id} delay={idx * 0.06}>
               <EducationRow item={e} />
@@ -77,21 +77,22 @@ function EducationRow({ item }: { item: Education }) {
 
   return (
     <div className="relative">
-      <div className="rounded-3xl ring-1 ring-white/10 bg-white/[0.055] p-6 md:p-8 backdrop-blur-lg shadow-[0_0_40px_rgba(59,130,246,0.08)]">
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-6">
+      <div className="pointer-events-none absolute -inset-2 -z-10 rounded-[28px] bg-[radial-gradient(40%_60%_at_20%_10%,rgba(99,102,241,.20),transparent_60%),radial-gradient(40%_60%_at_80%_90%,rgba(34,211,238,.16),transparent_60%)] blur-2xl" />
+      <div className="rounded-3xl ring-1 ring-white/10 bg-white/[0.06] p-7 md:p-9 backdrop-blur-xl shadow-[0_0_50px_rgba(59,130,246,0.10)]">
+        <div className="grid gap-3 md:gap-6 md:grid-cols-[1fr_auto] md:items-start">
           <div className="text-xl md:text-2xl font-semibold tracking-tight">
             {item.degree}{" "}
             <span className="text-white/60">— {item.school}</span>
             {item.location ? <span className="text-white/50"> • {item.location}</span> : null}
           </div>
-          <div className="text-sm md:text-base text-white/75 md:text-right whitespace-nowrap shrink-0 leading-6 md:pt-1">{period}</div>
+          <div className="text-sm md:text-base text-white/75 md:text-right whitespace-nowrap shrink-0 leading-6 md:pt-1 tabular-nums">{period}</div>
         </div>
 
         {(item.field || item.gpa) && (
           <div className="mt-2 text-sm md:text-base text-white/80 flex flex-wrap items-center gap-2">
             {item.field ? <span>{item.field}</span> : null}
             {item.gpa ? (
-              <span className="ml-0 inline-flex items-center rounded-md px-2 py-0.5 ring-1 ring-sky-500/30 bg-gradient-to-r from-sky-400/15 to-cyan-500/15 text-sky-300 shadow-[0_0_12px_rgba(56,189,248,0.35)]">
+              <span className="ml-0 inline-flex items-center rounded-md px-2 py-0.5 ring-1 ring-sky-400/40 bg-gradient-to-r from-sky-400/20 to-cyan-400/20 text-sky-300 shadow-[0_0_16px_rgba(56,189,248,0.45)]">
                 GPA: {item.gpa}
               </span>
             ) : null}
@@ -114,7 +115,7 @@ function EducationRow({ item }: { item: Education }) {
             {coursework.map((c, i) => (
               <span
                 key={i}
-                className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs md:text-sm text-white/85 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]"
+                className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs md:text-sm text-white/85 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]"
               >
                 {c}
               </span>

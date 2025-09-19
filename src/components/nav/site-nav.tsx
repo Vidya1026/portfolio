@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { useEffect, useState, useRef, useCallback, MouseEvent } from "react";
+import { useEffect, useState, useRef } from "react";
 
 // small inline icons so we don't add deps
 function GitHubIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -148,46 +148,46 @@ export function SiteNav() {
 
           {/* Right side */}
           <div className="flex items-center gap-1">
-            <a href="/#about" className={activeFX("about")}>
+            <Link href="/#about" className={activeFX("about")}>
               <span className="relative z-10">About</span>
               <span className="pointer-events-none absolute inset-0 rounded-md opacity-0 blur-md transition group-hover:opacity-20 bg-gradient-to-r from-violet-500/0 via-violet-500/25 to-cyan-400/0" />
               <span className="pointer-events-none absolute left-2 right-2 -bottom-0.5 h-px origin-left scale-x-0 bg-gradient-to-r from-transparent via-fuchsia-400/90 to-transparent transition-transform duration-300 group-hover:scale-x-100" />
-            </a>
-            <a href="/#education" className={activeFX("education")}>
+            </Link>
+            <Link href="/#education" className={activeFX("education")}>
               <span className="relative z-10">Education</span>
               <span className="pointer-events-none absolute inset-0 rounded-md opacity-0 blur-md transition group-hover:opacity-20 bg-gradient-to-r from-violet-500/0 via-violet-500/25 to-cyan-400/0" />
               <span className="pointer-events-none absolute left-2 right-2 -bottom-0.5 h-px origin-left scale-x-0 bg-gradient-to-r from-transparent via-fuchsia-400/90 to-transparent transition-transform duration-300 group-hover:scale-x-100" />
-            </a>
-            <a href="/#experience" className={activeFX("experience")}>
+            </Link>
+            <Link href="/#experience" className={activeFX("experience")}>
               <span className="relative z-10">Experience</span>
               <span className="pointer-events-none absolute inset-0 rounded-md opacity-0 blur-md transition group-hover:opacity-20 bg-gradient-to-r from-violet-500/0 via-violet-500/25 to-cyan-400/0" />
               <span className="pointer-events-none absolute left-2 right-2 -bottom-0.5 h-px origin-left scale-x-0 bg-gradient-to-r from-transparent via-fuchsia-400/90 to-transparent transition-transform duration-300 group-hover:scale-x-100" />
-            </a>
-            <a href="/#skills" className={activeFX("skills")}>
+            </Link>
+            <Link href="/#skills" className={activeFX("skills")}>
               <span className="relative z-10">Skills</span>
               <span className="pointer-events-none absolute inset-0 rounded-md opacity-0 blur-md transition group-hover:opacity-20 bg-gradient-to-r from-violet-500/0 via-violet-500/25 to-cyan-400/0" />
               <span className="pointer-events-none absolute left-2 right-2 -bottom-0.5 h-px origin-left scale-x-0 bg-gradient-to-r from-transparent via-fuchsia-400/90 to-transparent transition-transform duration-300 group-hover:scale-x-100" />
-            </a>
-            <a href="/#projects" className={activeFX("projects")}>
+            </Link>
+            <Link href="/#projects" className={activeFX("projects")}>
               <span className="relative z-10">Projects</span>
               <span className="pointer-events-none absolute inset-0 rounded-md opacity-0 blur-md transition group-hover:opacity-20 bg-gradient-to-r from-violet-500/0 via-violet-500/25 to-cyan-400/0" />
               <span className="pointer-events-none absolute left-2 right-2 -bottom-0.5 h-px origin-left scale-x-0 bg-gradient-to-r from-transparent via-fuchsia-400/90 to-transparent transition-transform duration-300 group-hover:scale-x-100" />
-            </a>
-            <a href="/#certifications" className={activeFX("certifications")}>
+            </Link>
+            <Link href="/#certifications" className={activeFX("certifications")}>
               <span className="relative z-10">Certifications</span>
               <span className="pointer-events-none absolute inset-0 rounded-md opacity-0 blur-md transition group-hover:opacity-20 bg-gradient-to-r from-violet-500/0 via-violet-500/25 to-cyan-400/0" />
               <span className="pointer-events-none absolute left-2 right-2 -bottom-0.5 h-px origin-left scale-x-0 bg-gradient-to-r from-transparent via-fuchsia-400/90 to-transparent transition-transform duration-300 group-hover:scale-x-100" />
-            </a>
-            <a href="/#publications" className={activeFX("publications")}>
+            </Link>
+            <Link href="/#publications" className={activeFX("publications")}>
               <span className="relative z-10">Publications</span>
               <span className="pointer-events-none absolute inset-0 rounded-md opacity-0 blur-md transition group-hover:opacity-20 bg-gradient-to-r from-violet-500/0 via-violet-500/25 to-cyan-400/0" />
               <span className="pointer-events-none absolute left-2 right-2 -bottom-0.5 h-px origin-left scale-x-0 bg-gradient-to-r from-transparent via-fuchsia-400/90 to-transparent transition-transform duration-300 group-hover:scale-x-100" />
-            </a>
-            <a href="/#contact" className={activeFX("contact")}>
+            </Link>
+            <Link href="/#contact" className={activeFX("contact")}>
               <span className="relative z-10">Contact</span>
               <span className="pointer-events-none absolute inset-0 rounded-md opacity-0 blur-md transition group-hover:opacity-20 bg-gradient-to-r from-violet-500/0 via-violet-500/25 to-cyan-400/0" />
               <span className="pointer-events-none absolute left-2 right-2 -bottom-0.5 h-px origin-left scale-x-0 bg-gradient-to-r from-transparent via-fuchsia-400/90 to-transparent transition-transform duration-300 group-hover:scale-x-100" />
-            </a>
+            </Link>
 
             {/* Socials */}
             <a
@@ -226,7 +226,7 @@ export function SiteNav() {
             </a>
 
             {/* Open‑to‑Work pill (stronger green + glow) */}
-            <a
+            <Link
               href="/#contact"
               aria-label="Open to work"
               className={cn(
@@ -239,7 +239,7 @@ export function SiteNav() {
             >
               <span className="inline-block h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.9)]" />
               <span className="tracking-tight">Open to Work</span>
-            </a>
+            </Link>
           </div>
         </nav>
       </div>

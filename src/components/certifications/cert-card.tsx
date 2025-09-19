@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { supabase } from "@/lib/supabase/client";
+import Image from "next/image";
 
 type Cert = {
   name: string;
@@ -42,15 +43,15 @@ export function CertCard({ cert }: { cert: Cert }) {
 
   return (
     <div className="cert-card-inner relative z-10 rounded-xl p-3 md:p-4 flex flex-col w-full h-full">
-      <div className="w-full aspect-[16/10] rounded-lg overflow-hidden mb-3 bg-black/30 flex items-center justify-center">
+      <div className="relative w-full aspect-[16/10] rounded-lg overflow-hidden mb-3 bg-black/30">
         {imgSrc ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={imgSrc}
             alt={cert.name}
-            className="w-full h-full object-contain object-center bg-white"
-            loading="lazy"
-            decoding="async"
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            style={{ objectFit: "contain", objectPosition: "center", background: "white" }}
+            priority={false}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-violet-500/30 to-cyan-500/30" />

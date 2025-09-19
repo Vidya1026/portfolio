@@ -1,5 +1,22 @@
 "use client";
 
+type CertVM = {
+  name: string;
+  issuer: string;
+  year: string | number | null;
+  proof: string | null;
+  image: string; // already public URL or ""
+};
+
+type Cert = {
+  name: string;
+  issuer: string;
+  year: string;      // normalized to string for CertCard
+  proof: string;     // empty string if not provided
+  image: string;     // already a public URL or ""
+};
+
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { FadeIn } from "@/components/motion/FadeIn";
@@ -18,7 +35,7 @@ function toPublicUrl(image?: string | null): string {
 }
 
 export default function CertificationsSection() {
-  const [certs, setCerts] = useState<any[]>([]);
+  const [certs, setCerts] = useState<CertVM[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -31,12 +48,12 @@ export default function CertificationsSection() {
 
       if (!error && data) {
         setCerts(
-          data.map((c: any) => ({
-            name: c.name,
-            issuer: c.issuer,
-            year: c.year,
-            proof: c.proof_url,
-            image: toPublicUrl(c.image),
+          (data as Record<string, unknown>[]).map((row) => ({
+            name: typeof row["name"] === "string" ? row["name"] : "",
+            issuer: typeof row["issuer"] === "string" ? row["issuer"] : "",
+            year: typeof row["year"] === "number" || typeof row["year"] === "string" ? (row["year"] as number | string) : null,
+            proof: typeof row["proof_url"] === "string" ? (row["proof_url"] as string) : null,
+            image: toPublicUrl(typeof row["image"] === "string" ? (row["image"] as string) : null),
           }))
         );
       } else {
@@ -62,22 +79,30 @@ export default function CertificationsSection() {
         </FadeIn>
 
         <div className="relative z-10 isolate grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 place-items-stretch mt-12">
-          {certs.map((c, i) => (
-            <FadeIn key={c.name} delay={i * 0.06}>
-              <div
-                className="group relative z-0 hover:animate-[wiggle_800ms_ease-in-out] transition-transform duration-300 will-change-transform hover:scale-[1.02] hover:-translate-y-1"
-              >
-                {/* soft halo behind on hover */}
-                <div className="pointer-events-none absolute -inset-1.5 rounded-2xl bg-[radial-gradient(30%_40%_at_50%_0%,theme(colors.violet.500/18),transparent_70%)] opacity-0 group-hover:opacity-80 transition-opacity duration-300 -z-10" />
-
-                {/* card host with sheen (CSS in globals) */}
-                <div className="relative z-10 isolate rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-[0.5px] overflow-hidden cert-card">
-                  <div aria-hidden className="card-sheen" />
-                  <CertCard cert={c} />
+          {certs.map((c, i) => {
+            const cert: Cert = {
+              name: c.name,
+              issuer: c.issuer,
+              year: String(c.year ?? ""),
+              proof: c.proof ?? "",
+              image: c.image,
+            };
+            return (
+              <FadeIn key={`${c.name}-${c.issuer}-${i}`} delay={i * 0.06}>
+                <div
+                  className="group relative z-0 hover:animate-[wiggle_800ms_ease-in-out] transition-transform duration-300 will-change-transform hover:scale-[1.02] hover:-translate-y-1"
+                >
+                  {/* soft halo behind on hover */}
+                  <div className="pointer-events-none absolute -inset-1.5 rounded-2xl bg-[radial-gradient(30%_40%_at_50%_0%,theme(colors.violet.500/18),transparent_70%)] opacity-0 group-hover:opacity-80 transition-opacity duration-300 -z-10" />
+                  {/* card host with sheen (CSS in globals) */}
+                  <div className="relative z-10 isolate rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-[0.5px] overflow-hidden cert-card">
+                    <div aria-hidden className="card-sheen" />
+                    <CertCard cert={cert} />
+                  </div>
                 </div>
-              </div>
-            </FadeIn>
-          ))}
+              </FadeIn>
+            );
+          })}
         </div>
       </div>
     </section>

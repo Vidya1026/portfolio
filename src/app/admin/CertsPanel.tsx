@@ -27,7 +27,7 @@ type CertRow = {
   id?: string;
   name: string;
   issuer?: string;
-  year?: number | string;
+  year?: number | string | null;
   proof_url?: string;
   image?: string;
   sort_order?: number;
@@ -58,7 +58,7 @@ export default function CertsPanel() {
       .select('*')
       .order('sort_order', { ascending: true })
       .order('year', { ascending: false });
-    if (!error && data) setRows(data as any);
+    if (!error && data) setRows(data as CertRow[]);
     setLoading(false);
   }
 
@@ -77,7 +77,7 @@ export default function CertsPanel() {
         issuer: (form.issuer || '').trim(),
         proof_url: (form.proof_url || '').trim() || undefined,
         image: (form.image || '').trim() || undefined,
-        year: form.year === '' || form.year === undefined ? (null as any) : Number(form.year),
+        year: form.year === '' || form.year === undefined ? null : Number(form.year),
         sort_order: Number(form.sort_order ?? 999),
         published: !!form.published,
       };
@@ -96,8 +96,12 @@ export default function CertsPanel() {
         published: true,
       });
       await load();
-    } catch (err: any) {
-      setMsg(err.message || 'Save failed');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setMsg(err.message || 'Save failed');
+      } else {
+        setMsg('Save failed');
+      }
     } finally {
       setSaving(false);
     }
@@ -162,8 +166,12 @@ export default function CertsPanel() {
 
       setForm(f => ({ ...f, image: publicUrl }));
       setMsg('Image uploaded ✔');
-    } catch (err: any) {
-      setMsg(err.message || 'Upload failed');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setMsg(err.message || 'Upload failed');
+      } else {
+        setMsg('Upload failed');
+      }
     } finally {
       setUploadingImage(false);
       // clear the file input safely

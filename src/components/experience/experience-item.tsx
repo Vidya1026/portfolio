@@ -19,15 +19,17 @@ function toArray(value: string | string[] | undefined): string[] {
 type Props = {
   org: string;
   role: string;
-  start: string;
-  end: string;
-  bullets: string | string[];
-  tools?: string | string[];
-  logoUrl?: string;
-  last?: boolean;
+  start?: string | undefined;
+  end?: string | undefined;
+  bullets?: string | string[] | undefined;
+  tools?: string | string[] | undefined;
+  logoUrl?: string | undefined;
+  last?: boolean | undefined;
 };
 
 export function ExperienceItem({ org, role, start, end, bullets, tools, logoUrl, last }: Props) {
+  const dateLabel =
+    (start ?? "") + (start && end ? " — " : "") + (end ?? "");
   const bulletsArr = toArray(bullets);
   const toolsArr = toArray(tools);
 
@@ -66,7 +68,9 @@ export function ExperienceItem({ org, role, start, end, bullets, tools, logoUrl,
           )}
           <div className="flex-1">
             <h3 className="text-base md:text-lg font-semibold">{role}</h3>
-            <p className="text-sm text-muted-foreground">{org} • {start} — {end}</p>
+            <p className="text-sm text-muted-foreground">
+              {org}{dateLabel ? " • " + dateLabel : ""}
+            </p>
           </div>
         </div>
 
