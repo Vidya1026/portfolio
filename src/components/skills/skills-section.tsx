@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import type { SkillGroup, Skill } from "@/types/skills";
 import { FadeIn } from "@/components/motion/FadeIn";
-import Image from "next/image";
 
 type GroupWithSkills = SkillGroup & { skills: Skill[] };
 
@@ -99,22 +98,15 @@ export default function SkillsSection() {
     // simple heuristic: URL/image
     if (/^https?:\/\//.test(icon))
       return (
-        <Image
+        <img
           src={icon}
           alt=""
-          width={20}
-          height={20}
-          className="rounded-sm object-contain"
-          style={{ height: 20, width: 20 }}
-          priority={false}
+          className="h-5 w-5 rounded-sm object-contain"
+          loading="lazy"
         />
       );
-    // emoji-ish? (avoid Unicode property escapes which can crash older runtimes)
-    // Heuristic: short, non-ASCII, or contains typical emoji surrogate range.
-    const likelyEmoji =
-      icon.length <= 4 ||
-      /[\u2190-\u2BFF\u3000-\u303F\u{1F000}-\u{1FAFF}]/u.test(icon);
-    if (likelyEmoji) return <span className="text-lg">{icon}</span>;
+    // emoji?
+    if (/\p{Emoji}/u.test(icon)) return <span className="text-lg">{icon}</span>;
     // icon text fallback
     return <span className="select-none">🔹</span>;
   };

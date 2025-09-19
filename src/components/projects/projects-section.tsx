@@ -239,57 +239,146 @@ export default function ProjectsSection() {
     })();
   }, []);
 
+  // Make sure the Projects content becomes visible on hard refresh / direct anchor land.
+  // Some FadeIn wrappers stay at opacity:0 if IntersectionObserver misses the first frame.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const section = document.getElementById("projects");
+    if (!section) return;
+
+    const reveal = () => {
+      // If user lands on #projects OR the section is near the viewport top, force‑reveal.
+      const atHash = window.location.hash === "#projects";
+      const rect = section.getBoundingClientRect();
+      const nearTop = rect.top < window.innerHeight * 0.75;
+
+      if (!atHash && !nearTop) return;
+
+      // Force container and any descendant stuck at opacity:0 to visible.
+      const candidates = section.querySelectorAll(".projects-area, [data-fade], [data-fade-in], .projects-area *");
+      candidates.forEach((el) => {
+        const node = el as HTMLElement;
+        const cs = getComputedStyle(node);
+        if (cs.opacity === "0" || cs.transform !== "none") {
+          node.style.opacity = "1";
+          node.style.transform = "none";
+        }
+      });
+    };
+
+    // Run immediately, then on next frame, and on important lifecycle events.
+    reveal();
+    const raf = requestAnimationFrame(reveal);
+    const t = setTimeout(reveal, 0);
+    window.addEventListener("hashchange", reveal);
+    window.addEventListener("load", reveal);
+    window.addEventListener("scroll", reveal, { passive: true });
+
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(t);
+      window.removeEventListener("hashchange", reveal);
+      window.removeEventListener("load", reveal);
+      window.removeEventListener("scroll", reveal);
+    };
+  }, []);
+
+  // Disable fade-in when directly landing on #projects to avoid "invisible content" on refresh.
+  const disableFade =
+    typeof window !== "undefined" && window.location.hash === "#projects";
+
   return (
-    <section id="projects" className="relative z-20 isolate py-18 md:py-24">
+    <section
+      id="projects"
+      className="relative z-20 isolate pt-40 md:pt-48 pb-24 md:pb-32 scroll-mt-40 md:scroll-mt-56"
+    >
       <div className="container">
         <DebugBanner count={items.length} />
-        <FadeIn>
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="text-4xl md:text-5xl font-extrabold leading-tight">
-              <span className="gradient-text">Featured Projects</span>
-            </h2>
-            <p className="mt-4 text-sm md:text-base text-muted-foreground">
-              A selection of impactful projects showcasing full‑stack engineering and AI integration.
-            </p>
-            <div className="mx-auto mt-6 h-px w-40 md:w-56 bg-gradient-to-r from-transparent via-violet-500/60 to-transparent rounded-full" />
-            <div className="pointer-events-none mx-auto mt-2 h-[2px] w-24 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full" />
-          </div>
-        </FadeIn>
-
-        <div className="relative z-10 isolate mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 place-items-stretch min-h-[2rem]">
-          {/* Grid */}
-          {loading && (
-            <div className="col-span-full text-center text-sm text-white/60">Loading projects…</div>
-          )}
-          {!loading && items.length === 0 && (
-            <div className="col-span-full text-center text-sm text-white/70 border border-white/10 rounded-xl py-6">
-              {errMsg ? (
-                <>
-                  <div className="font-medium text-white/80">Couldn&apos;t load projects.</div>
-                  <div className="mt-1 text-xs text-white/50">Supabase says: {String(errMsg ?? "unknown error")}</div>
-                </>
-              ) : (
-                <>
-                  No projects found. Make sure your <code className="px-1 rounded bg-white/5">projects</code> table has
-                  published rows and the column names match.
-                </>
-              )}
+        <div
+          className="projects-area"
+          data-force-visible
+          data-no-fade={disableFade || undefined}
+          style={disableFade ? ({ opacity: 1, transform: "none" } as React.CSSProperties) : undefined}
+        >
+          {disableFade ? (
+            <div className="mx-auto max-w-3xl text-center">
+              <h2 className="text-4xl md:text-5xl font-extrabold leading-tight">
+                <span className="gradient-text">Featured Projects</span>
+              </h2>
+              <p className="mt-4 text-sm md:text-base text-muted-foreground">
+                A selection of impactful projects showcasing full‑stack engineering and AI integration.
+              </p>
+              <div className="mx-auto mt-6 h-px w-40 md:w-56 bg-gradient-to-r from-transparent via-violet-500/60 to-transparent rounded-full" />
+              <div className="pointer-events-none mx-auto mt-2 h-[2px] w-24 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full" />
             </div>
+          ) : (
+            <FadeIn>
+              <div className="mx-auto max-w-3xl text-center">
+                <h2 className="text-4xl md:text-5xl font-extrabold leading-tight">
+                  <span className="gradient-text">Featured Projects</span>
+                </h2>
+                <p className="mt-4 text-sm md:text-base text-muted-foreground">
+                  A selection of impactful projects showcasing full‑stack engineering and AI integration.
+                </p>
+                <div className="mx-auto mt-6 h-px w-40 md:w-56 bg-gradient-to-r from-transparent via-violet-500/60 to-transparent rounded-full" />
+                <div className="pointer-events-none mx-auto mt-2 h-[2px] w-24 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full" />
+              </div>
+            </FadeIn>
           )}
-          {!loading &&
-            items.map((p, i) => (
-              <FadeIn key={`${p.title || "untitled"}-${p.year || "n/a"}-${i}`} delay={i * 0.08}>
-                <div className="group relative z-0 [--halo:theme(colors.violet.500/18)] [--ring:conic-gradient(from_180deg,theme(colors.violet.500/.4),theme(colors.fuchsia.500/.35),theme(colors.cyan.400/.35),theme(colors.violet.500/.4))] hover:animate-[wiggle_800ms_ease-in-out] transition-transform duration-300 will-change-transform hover:scale-[1.02] hover:-translate-y-1">
-                  <div className="pointer-events-none absolute -inset-1.5 rounded-2xl bg-[radial-gradient(30%_40%_at_50%_0%,var(--halo),transparent_70%)] opacity-0 group-hover:opacity-80 transition-opacity duration-300 -z-10" />
-                  <div className="relative z-10 isolate min-h-[460px] flex rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-[0.5px] overflow-hidden project-card">
-                    <div aria-hidden className="card-sheen" />
-                    <CardBoundary p={p}>
-                      <ProjectCard p={p} />
-                    </CardBoundary>
+
+          <div className="relative z-10 isolate mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 place-items-stretch min-h-[2rem]">
+            {/* Grid */}
+            {loading && (
+              <div className="col-span-full text-center text-sm text-white/60">Loading projects…</div>
+            )}
+            {!loading && items.length === 0 && (
+              <div className="col-span-full text-center text-sm text-white/70 border border-white/10 rounded-xl py-6">
+                {errMsg ? (
+                  <>
+                    <div className="font-medium text-white/80">Couldn&apos;t load projects.</div>
+                    <div className="mt-1 text-xs text-white/50">Supabase says: {String(errMsg ?? "unknown error")}</div>
+                  </>
+                ) : (
+                  <>
+                    No projects found. Make sure your <code className="px-1 rounded bg-white/5">projects</code> table has
+                    published rows and the column names match.
+                  </>
+                )}
+              </div>
+            )}
+            {!loading &&
+              items.map((p, i) =>
+                disableFade ? (
+                  <div
+                    key={`${p.title || "untitled"}-${p.year || "n/a"}-${i}`}
+                    className="group relative z-0 [--halo:theme(colors.violet.500/18)] [--ring:conic-gradient(from_180deg,theme(colors.violet.500/.4),theme(colors.fuchsia.500/.35),theme(colors.cyan.400/.35),theme(colors.violet.500/.4))] hover:animate-[wiggle_800ms_ease-in-out] transition-transform duration-300 will-change-transform hover:scale-[1.02] hover:-translate-y-1"
+                  >
+                    <div className="pointer-events-none absolute -inset-1.5 rounded-2xl bg-[radial-gradient(30%_40%_at_50%_0%,var(--halo),transparent_70%)] opacity-0 group-hover:opacity-80 transition-opacity duration-300 -z-10" />
+                    <div className="relative z-10 isolate min-h-[460px] flex rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-[0.5px] overflow-hidden project-card">
+                      <div aria-hidden className="card-sheen" />
+                      <CardBoundary p={p}>
+                        {/* @ts-expect-error - dynamic component props are not inferred */}
+                        <ProjectCard p={p} />
+                      </CardBoundary>
+                    </div>
                   </div>
-                </div>
-              </FadeIn>
-            ))}
+                ) : (
+                  <FadeIn key={`${p.title || "untitled"}-${p.year || "n/a"}-${i}`} delay={i * 0.08}>
+                    <div className="group relative z-0 [--halo:theme(colors.violet.500/18)] [--ring:conic-gradient(from_180deg,theme(colors.violet.500/.4),theme(colors.fuchsia.500/.35),theme(colors.cyan.400/.35),theme(colors.violet.500/.4))] hover:animate-[wiggle_800ms_ease-in-out] transition-transform duration-300 will-change-transform hover:scale-[1.02] hover:-translate-y-1">
+                      <div className="pointer-events-none absolute -inset-1.5 rounded-2xl bg-[radial-gradient(30%_40%_at_50%_0%,var(--halo),transparent_70%)] opacity-0 group-hover:opacity-80 transition-opacity duration-300 -z-10" />
+                      <div className="relative z-10 isolate min-h-[460px] flex rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-[0.5px] overflow-hidden project-card">
+                        <div aria-hidden className="card-sheen" />
+                        <CardBoundary p={p}>
+                          {/* @ts-expect-error - dynamic component props are not inferred */}
+                          <ProjectCard p={p} />
+                        </CardBoundary>
+                      </div>
+                    </div>
+                  </FadeIn>
+                )
+              )}
+          </div>
         </div>
       </div>
     </section>

@@ -579,7 +579,7 @@ export default function HomePage() {
       </section>
 
       {/* Skills */}
-      <section id="skills" className="section-anchor pt-10">
+      <section id="skills" className="section-anchor pt-10 pb-16 md:pb-24">
         <div className="mx-auto w-full max-w-6xl section-gutter px-4 md:px-6">
           <FadeIn>
             <SkillsSection />
@@ -588,13 +588,11 @@ export default function HomePage() {
       </section>
 
       {/* Projects — left-aligned grid of glowing cards */}
-      <section id="projects" className="section-anchor pt-10">
+      <section id="projects" className="section-anchor pt-16 md:pt-24">
         <div className="mx-auto w-full max-w-6xl section-gutter px-4 md:px-6">
-          <FadeIn>
-            <div className="projects-area">
-              <ProjectsSection />
-            </div>
-          </FadeIn>
+          <div className="projects-area">
+            <ProjectsSection />
+          </div>
         </div>
       </section>
 
