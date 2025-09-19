@@ -180,7 +180,7 @@ const ChatWidget: React.FC = () => {
         <button
           onClick={() => { setIsOpen(true); setHasGreeted(true); }}
           aria-label="Open chat"
-          title="Open Gemini 2.0 Assistant"
+          title="Open RAG + Gemini 2.0 Assistant"
           type="button"
           className={`relative w-14 h-14 rounded-full bg-violet-600 text-white shadow-[0_0_22px_rgba(139,92,246,0.85)] flex items-center justify-center hover:shadow-[0_0_28px_rgba(139,92,246,1)] transition-shadow overflow-visible hover:animate-wiggle ${attn ? "chat-fab-attn" : ""}`}
         >
@@ -235,7 +235,7 @@ const ChatWidget: React.FC = () => {
           >
             <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
               <span className="inline-block hand-wave animate-wiggle-slow">🤖</span>
-              <span className={`truncate ${compact ? "text-[13px]" : ""}`}>Gemini 2.0 Assistant</span>
+              <span className={`truncate ${compact ? "text-[13px]" : ""}`}>Gemini 2.0 + RAG Assistant</span>
             </div>
             <div
               className={`flex items-center ${compact ? "gap-2" : "gap-4"} cursor-default flex-none whitespace-nowrap pointer-events-auto z-[90] flex-wrap`}
@@ -310,7 +310,7 @@ const ChatWidget: React.FC = () => {
           {!isMinimized && (
             <div className="flex-1 overflow-y-auto min-h-0 space-y-2 pt-2 pb-28 px-3 z-[10]">
               <div className="max-w-[80%] px-3 py-2 rounded-2xl text-sm bg-violet-500/20 text-white rounded-bl-md shadow-[0_0_6px_rgba(139,92,246,0.6)]">
-                👋 I’m Bhargava’s Portfolio Assistant. Ask about projects, experience, or certifications.
+                👋 I’m Bhargava’s Portfolio Assistant — powered by <span className="font-semibold">RAG + Gemini&nbsp;2.0</span> (Supabase). Ask anything about Bhargava — <span className="font-medium">projects</span>, <span className="font-medium">experience</span>, <span className="font-medium">skills</span>, <span className="font-medium">publications</span>, <span className="font-medium">certifications</span>, or <span className="font-medium">education</span>.
               </div>
 
               {messages.map((m, i) => (
@@ -397,7 +397,7 @@ const ChatWidget: React.FC = () => {
                   </button>
                 </div>
               </div>
-              <div className="mt-2 text-[10px] text-white/60 text-center">Powered by Gemini 2.0</div>
+              <div className="mt-2 text-[10px] text-white/60 text-center">Powered by Gemini 2.0 + RAG</div>
             </div>
           )}
 

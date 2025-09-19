@@ -50,6 +50,7 @@ const chipDot = (accent?: string | null) =>
 export default function SkillsSection() {
   const [groups, setGroups] = useState<GroupWithSkills[]>([]);
   const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -57,17 +58,23 @@ export default function SkillsSection() {
         .from("skill_groups")
         .select("*")
         .eq("published", true)
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: true });
+        .order("sort_order", { ascending: true });
 
-      if (ge || !g) return setLoading(false);
+      if (ge || !g) {
+        setErr(ge ? ge.message : "No groups found");
+        setGroups([]);
+        setLoading(false);
+        return;
+      }
 
-      const { data: s } = await supabase
+      const { data: s, error: se } = await supabase
         .from("skills")
         .select("*")
         .eq("published", true)
-        .order("group_id", { ascending: true })
         .order("sort_order", { ascending: true });
+      if (se) {
+        setErr(se.message);
+      }
 
       const map = new Map<string, Skill[]>();
       (s ?? []).forEach((row) => {
@@ -98,14 +105,18 @@ export default function SkillsSection() {
           loading="lazy"
         />
       );
-    // emoji?
-    if (/\p{Emoji}/u.test(icon)) return <span className="text-lg">{icon}</span>;
+    // emoji-ish? (avoid Unicode property escapes which can crash older runtimes)
+    // Heuristic: short, non-ASCII, or contains typical emoji surrogate range.
+    const likelyEmoji =
+      icon.length <= 4 ||
+      /[\u2190-\u2BFF\u3000-\u303F\u{1F000}-\u{1FAFF}]/u.test(icon);
+    if (likelyEmoji) return <span className="text-lg">{icon}</span>;
     // icon text fallback
     return <span className="select-none">🔹</span>;
   };
 
   return (
-    <section id="skills" className="section-anchor pt-10">
+    <section id="skills" className="section-anchor pt-10 min-h-[200px]">
       <div className="mx-auto w-full max-w-6xl section-gutter px-4 md:px-6">
         <FadeIn>
           <h2 className="text-center text-4xl md:text-5xl font-extrabold gradient-text">
@@ -127,6 +138,25 @@ export default function SkillsSection() {
                 className="rounded-2xl bg-white/[0.04] ring-1 ring-white/10 p-6 animate-pulse h-48"
               />
             ))}
+          </div>
+        ) : groups.length === 0 ? (
+          <div className="mt-8 rounded-xl border border-white/10 bg-white/[0.03] p-6 text-center text-white/70">
+            <p className="text-sm">
+              No skills to show yet.
+              {err ? (
+                <>
+                  {" "}
+                  <span className="text-white/50">({err})</span>
+                </>
+              ) : null}
+            </p>
+            <p className="mt-2 text-xs text-white/50">
+              Tip: Ensure your <code className="text-white/80">skill_groups</code>{" "}
+              and <code className="text-white/80">skills</code> rows are{" "}
+              <span className="text-emerald-400">published</span> and your Supabase
+              RLS has a SELECT policy like{" "}
+              <code className="text-white/80">USING (published = true)</code>.
+            </p>
           </div>
         ) : (
           <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

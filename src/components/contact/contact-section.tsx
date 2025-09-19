@@ -16,6 +16,31 @@ function normalizeUrl(u: string) {
 }
 
 type Social = { label: string; url: string; icon?: string };
+
+function MapPinIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M12 21s-7-6.268-7-11a7 7 0 1 1 14 0c0 4.732-7 11-7 11z"/>
+      <circle cx="12" cy="10" r="3"/>
+    </svg>
+  );
+}
+function MailIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <rect x="3" y="5" width="18" height="14" rx="2"/>
+      <path d="M3 7l9 6 9-6"/>
+    </svg>
+  );
+}
+function PhoneIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M5 4h3l2 4-2 2a14 14 0 0 0 6 6l2-2 4 2v3a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>
+    </svg>
+  );
+}
+
 export default function ContactSection({
   email,
   phone,
@@ -50,7 +75,7 @@ export default function ContactSection({
             <div className="fancy-card relative group rounded-2xl p-[1px]">
               <div className="rounded-2xl ring-1 ring-white/10 bg-white/[0.06] backdrop-blur p-6 md:p-8 flex flex-col gap-5 transition-all duration-300 hover:-translate-y-0.5 hover:ring-white/20 hover:bg-white/[0.08]">
                 <div className="flex items-center gap-2">
-                  <span className="i-tabler-sparkles text-[18px] text-violet-300 animate-sparkle" />
+                  <span className="i-tabler-sparkles text-[20px] text-violet-300 animate-sparkle" />
                   <h3 className="text-xl font-semibold text-white/90">Get in touch</h3>
                 </div>
                 <p className="text-white/70">
@@ -59,11 +84,11 @@ export default function ContactSection({
 
                 <div className="mt-2 space-y-4">
                   {location && (
-                    <InfoRow icon="i-tabler-map-pin-filled" title="Location" value={location} />
+                    <InfoRow icon={<MapPinIcon />} title="Location" value={location} />
                   )}
                   {email && (
                     <InfoRow
-                      icon="i-tabler-mail"
+                      icon={<MailIcon />}
                       title="Email"
                       value={
                         <span className="inline-flex items-center gap-2">
@@ -81,7 +106,7 @@ export default function ContactSection({
                   )}
                   {phone && (
                     <InfoRow
-                      icon="i-tabler-phone"
+                      icon={<PhoneIcon />}
                       title="Phone"
                       value={
                         <span className="inline-flex items-center gap-2">
@@ -110,12 +135,12 @@ export default function ContactSection({
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label={`Open ${s.label}`}
-                          className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 bg-white/[0.06] ring-1 ring-white/10 text-white/85 hover:bg-white/[0.12] transition hover:-translate-y-0.5"
+                          className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 bg-white/[0.06] ring-1 ring-emerald-400/20 text-white/85 hover:bg-white/[0.12] transition hover:-translate-y-0.5 shadow-[0_0_0_rgba(16,185,129,0)] hover:shadow-[0_0_24px_rgba(16,185,129,.25)]"
                         >
                           {s.icon ? (
-                            <span className={`text-[16px] ${s.icon}`} />
+                            <span className={`text-[20px] text-emerald-300 ${s.icon}`} />
                           ) : (
-                            <span className="i-tabler-external-link text-[16px]" />
+                            <span className="i-tabler-external-link text-[20px] text-emerald-300" />
                           )}
                           <span className="text-sm">{s.label}</span>
                         </a>
@@ -132,7 +157,7 @@ export default function ContactSection({
             <div className="fancy-card relative group rounded-2xl p-[1px]">
               <div className="rounded-2xl ring-1 ring-white/10 bg-white/[0.04] backdrop-blur p-6 md:p-8 transition-all duration-300 hover:-translate-y-0.5 hover:ring-white/20 hover:bg-white/[0.06]">
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="i-tabler-message-2 text-[18px] text-emerald-300 animate-bob" />
+                  <span className="i-tabler-message-2 text-[20px] text-emerald-300 animate-bob" />
                   <h3 className="text-xl font-semibold text-white/90">Send a message</h3>
                 </div>
                 <ContactForm email={email} />
@@ -221,16 +246,15 @@ function InfoRow({
   title,
   value,
 }: {
-  icon: string;
+  icon: React.ReactNode;
   title: string;
   value: React.ReactNode;
 }) {
   return (
     <div className="flex items-start gap-3">
-      <span
-        aria-hidden
-        className={`shrink-0 inline-grid place-items-center size-9 rounded-lg ring-1 ring-white/10 bg-white/[0.06] ${icon}`}
-      />
+      <span aria-hidden className="shrink-0 inline-grid place-items-center size-9 rounded-lg ring-1 ring-white/10 bg-white/[0.06] text-emerald-300">
+        {icon}
+      </span>
       <div>
         <div className="text-sm text-white/60">{title}</div>
         <div className="text-white/85">{value}</div>
@@ -255,8 +279,8 @@ function CopyBtn({ text }: { text: string }) {
       aria-label="Copy to clipboard"
       title="Copy"
     >
-      <span className={`i-tabler-copy ${copied ? "hidden" : ""}`} />
-      <span className={`i-tabler-check text-emerald-400 ${copied ? "" : "hidden"}`} />
+      <span className={`i-tabler-copy text-[20px] ${copied ? "hidden" : ""}`} />
+      <span className={`i-tabler-check text-[20px] text-emerald-400 ${copied ? "" : "hidden"}`} />
     </button>
   );
 }
@@ -327,7 +351,7 @@ function ContactForm({ email }: { email?: string }) {
           className="group relative overflow-hidden rounded-xl btn-green-glow px-5 py-2.5 font-semibold"
         >
           <span className="relative z-10 inline-flex items-center gap-2">
-            <span aria-hidden className="i-tabler-send text-[18px] group-hover:translate-x-0.5 transition-transform" />
+            <span aria-hidden className="i-tabler-send text-[20px] group-hover:translate-x-0.5 transition-transform" />
             Send Message
           </span>
           <span className="pointer-events-none absolute inset-0 -translate-x-1/2 bg-gradient-to-r from-transparent via-white/35 to-transparent opacity-0 group-hover:opacity-100 transition duration-700 group-hover:translate-x-[120%]" />
@@ -338,7 +362,7 @@ function ContactForm({ email }: { email?: string }) {
             aria-live="polite"
             className="mt-3 inline-flex items-center gap-2 text-sm text-emerald-300/90 animate-fade-in"
           >
-            <span className="i-tabler-mail-opened" />
+            <span className="i-tabler-mail-opened text-[20px]" />
             Opening your mail app…
           </div>
         )}

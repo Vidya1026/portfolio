@@ -49,7 +49,7 @@ export function SiteNav() {
   }, []);
 
   useEffect(()=>{
-    const ids = ["about","education","experience","skills","certifications","publications","contact"];
+    const ids = ["about","education","experience","skills","projects","certifications","publications","contact"];
     const obs = new IntersectionObserver((entries)=>{
       entries.forEach((en)=>{
         if(en.isIntersecting){
@@ -165,6 +165,11 @@ export function SiteNav() {
             </a>
             <a href="/#skills" className={activeFX("skills")}>
               <span className="relative z-10">Skills</span>
+              <span className="pointer-events-none absolute inset-0 rounded-md opacity-0 blur-md transition group-hover:opacity-20 bg-gradient-to-r from-violet-500/0 via-violet-500/25 to-cyan-400/0" />
+              <span className="pointer-events-none absolute left-2 right-2 -bottom-0.5 h-px origin-left scale-x-0 bg-gradient-to-r from-transparent via-fuchsia-400/90 to-transparent transition-transform duration-300 group-hover:scale-x-100" />
+            </a>
+            <a href="/#projects" className={activeFX("projects")}>
+              <span className="relative z-10">Projects</span>
               <span className="pointer-events-none absolute inset-0 rounded-md opacity-0 blur-md transition group-hover:opacity-20 bg-gradient-to-r from-violet-500/0 via-violet-500/25 to-cyan-400/0" />
               <span className="pointer-events-none absolute left-2 right-2 -bottom-0.5 h-px origin-left scale-x-0 bg-gradient-to-r from-transparent via-fuchsia-400/90 to-transparent transition-transform duration-300 group-hover:scale-x-100" />
             </a>

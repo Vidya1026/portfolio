@@ -122,6 +122,75 @@
 
 /* ==== Reusable utilities (glow/gradient/spotlight/glass) ==== */
 @layer utilities {
+  /* === Contact section utilities (icon badges + social glow) === */
+  .icon-badge {
+    position: relative;
+    inline-size: 44px;
+    block-size: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.875rem; /* ~14px */
+    border: 1px solid rgba(255,255,255,0.08);
+    background:
+      radial-gradient(closest-side, rgba(167,139,250,0.18), transparent 70%),
+      linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.03));
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.04),
+      inset 0 0 18px rgba(167,139,250,0.10);
+    backdrop-filter: blur(2px);
+  }
+  .icon-badge::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: inherit;
+    background: radial-gradient(closest-side, rgba(167,139,250,0.28), transparent 70%);
+    opacity: 0;
+    transition: opacity 200ms ease;
+    pointer-events: none;
+  }
+  .icon-badge:hover::after { opacity: 1; }
+
+  /* quick sizing helpers for Tabler icons used in badges */
+  .icon-18 { width: 18px; height: 18px; }
+  .icon-20 { width: 20px; height: 20px; }
+  .icon-22 { width: 22px; height: 22px; }
+  .icon-24 { width: 24px; height: 24px; }
+
+  /* Social buttons with soft neon glow */
+  .social-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-inline: 0.9rem;
+    padding-block: 0.45rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(139,92,246,0.45);
+    color: rgba(243,244,246,0.96);
+    background: linear-gradient(180deg, rgba(139,92,246,0.20), rgba(59,130,246,0.10));
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.06),
+      0 0 18px rgba(139,92,246,0.25),
+      inset 0 0 18px rgba(139,92,246,0.14);
+    transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  }
+  .social-pill:hover {
+    transform: translateY(-1px);
+    border-color: rgba(167,139,250,0.65);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.12),
+      0 0 28px rgba(139,92,246,0.45),
+      inset 0 0 24px rgba(139,92,246,0.22);
+  }
+  .social-pill:active { transform: translateY(0); }
+
+  /* compact subtle label for field headings (Location, Email, Phone) */
+  .field-label {
+    letter-spacing: .02em;
+    color: rgba(226,232,240,0.82);
+  }
+
   /* Subtle gradient text */
   .gradient-text {
     @apply bg-clip-text text-transparent;
