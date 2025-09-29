@@ -6,7 +6,7 @@ type Msg = { sender: "user" | "assistant"; text: string };
 
 // History (off by default)
 const HISTORY_LIMIT = 20;
-const STORAGE_KEY = "bhargava.chat.history.v1";
+const STORAGE_KEY = "vidya.chat.history.v1";
 const PERSIST_HISTORY = false; // flip to true if you want last 20 msgs to persist
 
 // Size + bounds
@@ -310,7 +310,7 @@ const ChatWidget: React.FC = () => {
           {!isMinimized && (
             <div className="flex-1 overflow-y-auto min-h-0 space-y-2 pt-2 pb-28 px-3 z-[10]">
               <div className="max-w-[80%] px-3 py-2 rounded-2xl text-sm bg-violet-500/20 text-white rounded-bl-md shadow-[0_0_6px_rgba(139,92,246,0.6)]">
-                👋 I’m Bhargava’s Portfolio Assistant — powered by <span className="font-semibold">RAG + Gemini&nbsp;2.0</span> (Supabase). Ask anything about Bhargava — <span className="font-medium">projects</span>, <span className="font-medium">experience</span>, <span className="font-medium">skills</span>, <span className="font-medium">publications</span>, <span className="font-medium">certifications</span>, or <span className="font-medium">education</span>.
+                👋 I’m Vidya’s Portfolio Assistant — powered by <span className="font-semibold">RAG + Gemini&nbsp;2.0</span> (Supabase). Ask anything about Vidya — <span className="font-medium">projects</span>, <span className="font-medium">experience</span>, <span className="font-medium">skills</span>, <span className="font-medium">publications</span>, <span className="font-medium">certifications</span>, or <span className="font-medium">education</span>.
               </div>
 
               {messages.map((m, i) => (

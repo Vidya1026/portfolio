@@ -138,7 +138,7 @@ export function SiteNav() {
             >
               {/* glossy highlight */}
               <span aria-hidden className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(70%_60%_at_30%_30%,rgba(255,255,255,0.35),transparent_60%)] opacity-80" />
-              <span className="relative drop-shadow-[0_1px_0_rgba(0,0,0,0.35)]">B</span>
+              <span className="relative drop-shadow-[0_1px_0_rgba(0,0,0,0.35)]">V</span>
 
               {/* small status ping for a lively feel */}
               <span aria-hidden className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.9)]" />

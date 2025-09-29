@@ -631,7 +631,7 @@ export default function HomePage() {
       <footer className="mt-12 md:mt-16 border-t border-white/5">
         <div className="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-12 text-center">
           <p className="text-sm text-white/55">
-            © 2025 Gunapu Bhargava Sai Vardhan. All rights reserved.
+            © 2025 Gorji Vidya. All rights reserved.
           </p>
         </div>
       </footer>
