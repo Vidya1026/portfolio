@@ -7,8 +7,8 @@ import SiteNav from "@/components/nav/site-nav";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Bhargava | Full-Stack + AI",
-  description: "Portfolio of Gunapu Bhargava Sai Vardhan",
+  title: "Vidya | Full-Stack + AI",
+  description: "Portfolio of Vidya Gorji",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

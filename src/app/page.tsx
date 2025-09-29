@@ -504,7 +504,7 @@ export default function HomePage() {
               ) : (
                 <div className="absolute inset-0 grid place-items-center">
                   <div className="size-24 md:size-28 rounded-full bg-white/10 backdrop-blur-md ring-1 ring-white/20 grid place-items-center overflow-hidden">
-                    <span className="text-3xl md:text-4xl font-bold text-white/90">B</span>
+                    <span className="text-3xl md:text-4xl font-bold text-white/90">V</span>
                   </div>
                 </div>
               )}
