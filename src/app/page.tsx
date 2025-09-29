@@ -379,7 +379,7 @@ export default function HomePage() {
                   Open to work
                 </span>
               </div>
-              <HeroTitle text={settings.hero_title || "Bhargava — Full-Stack • AI/RAG"} />
+              <HeroTitle text={settings.hero_title || "Vidya — Full-Stack • AI/RAG"} />
             </FadeIn>
             <FadeIn delay={0.1}>
               <p className="text-muted-foreground max-w-xl mx-auto">
