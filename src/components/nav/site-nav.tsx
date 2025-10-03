@@ -191,7 +191,7 @@ export function SiteNav() {
 
             {/* Socials */}
             <a
-              href="https://github.com/Bhargav1026" target="_blank" rel="noreferrer"
+              href="https://github.com/Vidya1026" target="_blank" rel="noreferrer"
               className="ml-1 hidden sm:inline-flex items-center justify-center h-8 w-8 rounded-md text-foreground/70 hover:text-foreground/90 hover:shadow-[0_0_18px_rgba(168,85,247,0.35)] transition ring-1 ring-white/10 hover:ring-white/20 bg-background/40 hover:bg-background/60"
               aria-label="GitHub"
               onMouseMove={(e)=>{
@@ -208,7 +208,7 @@ export function SiteNav() {
               <GitHubIcon className="h-4 w-4" />
             </a>
             <a
-              href="https://www.linkedin.com/in/bhargava11/" target="_blank" rel="noreferrer"
+              href="https://www.linkedin.com/in/vidyagorji/" target="_blank" rel="noreferrer"
               className="hidden sm:inline-flex items-center justify-center h-8 w-8 rounded-md text-foreground/70 hover:text-foreground/90 hover:shadow-[0_0_18px_rgba(168,85,247,0.35)] transition ring-1 ring-white/10 hover:ring-white/20 bg-background/40 hover:bg-background/60"
               aria-label="LinkedIn"
               onMouseMove={(e)=>{
